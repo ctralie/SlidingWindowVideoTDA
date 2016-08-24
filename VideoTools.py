@@ -7,6 +7,8 @@ import time
 import os
 import subprocess
 import matplotlib.image as mpimage
+import scipy
+import scipy.signal
 
 #Need these for saving 3D video
 
@@ -64,10 +66,10 @@ def loadVideo(path, YCbCr = False):
     IDims = F0.shape
     #Now load in the video
     I = np.zeros((NFrames, F0.size))
-    print("Loading video.", end="", flush=True)
+    print "Loading video.",
     for i in range(NFrames):
         if i%20 == 0:
-            print('.', end="", flush=True)
+            print ".",
         filename = "%s%i.png"%(prefix, i+1)
         IM = mpimage.imread(filename)
         if YCbCr:
