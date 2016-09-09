@@ -258,3 +258,23 @@ def makeDriftingOscillatingSquare(NFrames = 200, NPeriods = 8, driftmag = 0, noi
         IDims = v.shape
         I[:, i] = v.flatten()
     return (I, IDims, ts)
+
+def makeSmoothGaussianSinusoid(NFrames = 200, NPeriods = 8, dim = 50):
+    IDims = (dim, dim, 3)
+    I = np.zeros((NFrames, dim*dim*3))
+    ts = np.linspace(0, NPeriods*2*np.pi, NFrames+1)
+    ts = ts[0:-1]
+    
+    [X, Y] = np.meshgrid(np.arange(dim), np.arange(dim))
+    G = np.zeros((dim, dim, 3))
+    for k in range(3):
+        G[:, :, k] = np.exp(-((X-float(dim/2))**2 + (Y-float(dim/2))**2)/(2*(dim/8)**2))
+    for i in range(NFrames):
+        f = G*np.cos(ts[i])
+        I[i, :] = f.flatten()
+    I = 0.5*(I + 1)
+    return (I, IDims)
+
+if __name__ == '__main__':
+    (I, IDims) = makeSmoothGaussianSinusoid()
+    saveVideo(I, IDims, "smoothSinusoid.ogg")
