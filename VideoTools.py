@@ -9,6 +9,7 @@ import subprocess
 import matplotlib.image as mpimage
 import scipy
 import scipy.signal
+from SyntheticCurves import * #For motion blur
 
 #Need these for saving 3D video
 
@@ -275,6 +276,25 @@ def makeSmoothGaussianSinusoid(NFrames = 200, NPeriods = 8, dim = 50):
     I = 0.5*(I + 1)
     return (I, IDims)
 
+#############################################################
+####                 OTHER VIDEO TOOLS                  #####
+#############################################################
+
+def simulateCameraShake(I, IDims, shakeMag):
+    J = np.zeros(I.shape)
+    for i in range(J.shape[0]):
+        print("Blurring frame %i of %i"%(i, J.shape[0]))
+        X = np.reshape(I[i, :], IDims)
+        (_, mask) = getRandomMotionBlurMask(shakeMag)
+        IBlur = 0*X
+        for k in range(X.shape[2]):
+            IBlur[:, :, k] = scipy.signal.convolve2d(X[:, :, k], mask, 'same')
+        #IBlur = np.array(IBlur, dtype=np.uint8)
+        J[i, :] = IBlur.flatten()
+    return J
+
+
 if __name__ == '__main__':
-    (I, IDims) = makeSmoothGaussianSinusoid()
-    saveVideo(I, IDims, "smoothSinusoid.ogg")
+    (I, IDims) = loadVideo("Videos/pendulum.avi")
+    IBlur = simulateCameraShake(I, IDims, 4)
+    saveVideo(IBlur, IDims, "out.avi")

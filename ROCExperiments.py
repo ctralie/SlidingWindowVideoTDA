@@ -35,14 +35,15 @@ def makePlot(X, PD):
     plt.bar(np.arange(len(eigs)), eigs)
     plt.title("Eigenvalues")
 
-def runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise):
+def runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent):
     print("PROCESSING ", filename, "....")
     persistences = []
     (XOrig, FrameDims) = loadVideo(filename)
     for i in range(NRandDraws):
         print("Random draw %i of %i"%(i, NRandDraws))
         print("Doing PCA...")
-        XSample = XOrig + Noise*np.random.randn(XOrig.shape[0], XOrig.shape[1])
+        XSample = simulateCameraShake(XOrig, FrameDims, BlurExtent)
+        XSample = XSample + Noise*np.random.randn(XOrig.shape[0], XOrig.shape[1])
         X = getPCAVideo(XSample)
         print("Finished PCA")
         [X, validIdx] = getTimeDerivative(X, 10)
@@ -88,8 +89,8 @@ def runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise):
             print("Saving first block")
             plt.clf()
             makePlot(XMax, PDMax)
-            plt.savefig("%s_%g_Stats.png"%(filename, Noise))
-            saveVideo(XSample[idxs[maxj], :], FrameDims, "%s_%g_max.ogg"%(filename, Noise))
+            plt.savefig("%s_%g_%i_Stats.png"%(filename, Noise, BlurExtent))
+            saveVideo(XSample[idxs[maxj], :], FrameDims, "%s_%g_%i_max.ogg"%(filename, Noise, BlurExtent))
     return np.array(persistences)
 
 def getROC(T, F):
@@ -110,34 +111,36 @@ if __name__ == '__main__':
     NRandDraws = 5
     
     #files = {'pendulum':'Videos/pendulum.avi', 'heart':'Videos/heartvariations.mp4', 'butterflies':'Videos/butterflies.mp4'}
-    files = {'driving':"Videos/drivingscene.mp4"}
+    files = {'pendulum':'Videos/pendulum.avi'}
+    #files = {'driving':"Videos/drivingscene.mp4"}
     #files = {'explosions':'Videos/explosions.mp4'}
     for name in files:
         filename = files[name]
-        for Noise in [0.001, 0.1, 0.2, 0.5, 1, 2]:
-            psTrue = runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise)
-            sio.savemat("psTrue%s%g.mat"%(name, Noise), {"psTrue":psTrue})
-            
-            if os.path.exists("psFalse%g.mat"%Noise):
-                psFalse = sio.loadmat("psFalse%g.mat"%Noise)['psFalse']
-            else:
-                psFalse = runExperiments("Videos/drivingscene.mp4", BlockLen, BlockHop, win, dim, 20, Noise)
-                sio.savemat("psFalse%g.mat"%Noise, {"psFalse":psFalse})
-            
-            #Plot ROC curve
-            (FP, TP) = getROC(psTrue, psFalse)
-            plt.clf()
-            plt.plot(FP, TP, 'b')
-            plt.hold(True)
-            plt.plot(np.linspace(0, 1, 100), np.linspace(0, 1, 100), 'r')
-            plt.xlabel("False Positive Rate")
-            plt.ylabel("True Positive Rate")
-            plt.title("ROC Curve")
-            plt.savefig("ROC%s%g.svg"%(name, Noise), bbox_inches='tight')
-            
-            #Plot histogram
-            plt.clf()
-            plt.hold(True)
-            plt.hist(psTrue.flatten(), 10, facecolor='blue')
-            plt.hist(psFalse.flatten(), 10, facecolor='red')
-            plt.savefig("Hists%s%g.svg"%(name, Noise), bbox_inches='tight')
+        for Noise in [0.001, 0.1, 0.5, 1]:
+            for BlurExtent in [1, 2, 10, 20]:
+                psTrue = runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent)
+                sio.savemat("psTrue%s_%g_%i.mat"%(name, Noise, BlurExtent), {"psTrue":psTrue})
+                
+                if os.path.exists("psFalse_%g_%i.mat"%(Noise, BlurExtent)):
+                    psFalse = sio.loadmat("psFalse_%g_%i.mat"%(Noise, BlurExtent))['psFalse']
+                else:
+                    psFalse = runExperiments("Videos/drivingscene.mp4", BlockLen, BlockHop, win, dim, 20, Noise, BlurExtent)
+                    sio.savemat("psFalse_%g_%i.mat"%(Noise, BlurExtent), {"psFalse":psFalse})
+                
+                #Plot ROC curve
+                (FP, TP) = getROC(psTrue, psFalse)
+                plt.clf()
+                plt.plot(FP, TP, 'b')
+                plt.hold(True)
+                plt.plot(np.linspace(0, 1, 100), np.linspace(0, 1, 100), 'r')
+                plt.xlabel("False Positive Rate")
+                plt.ylabel("True Positive Rate")
+                plt.title("ROC Curve")
+                plt.savefig("ROC_%s_%g_%i.svg"%(name, Noise, BlurExtent), bbox_inches='tight')
+                
+                #Plot histogram
+                plt.clf()
+                plt.hold(True)
+                plt.hist(psTrue.flatten(), 10, facecolor='blue')
+                plt.hist(psFalse.flatten(), 10, facecolor='red')
+                plt.savefig("Hists_%s_%g_%i.svg"%(name, Noise, BlurExtent), bbox_inches='tight')
