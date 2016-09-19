@@ -288,7 +288,7 @@ def simulateCameraShake(I, IDims, shakeMag):
         (_, mask) = getRandomMotionBlurMask(shakeMag)
         IBlur = 0*X
         for k in range(X.shape[2]):
-            IBlur[:, :, k] = scipy.signal.convolve2d(X[:, :, k], mask, 'same')
+            IBlur[:, :, k] = scipy.signal.fftconvolve(X[:, :, k], mask, 'same')
         #IBlur = np.array(IBlur, dtype=np.uint8)
         J[i, :] = IBlur.flatten()
     return J
@@ -296,5 +296,5 @@ def simulateCameraShake(I, IDims, shakeMag):
 
 if __name__ == '__main__':
     (I, IDims) = loadVideo("Videos/pendulum.avi")
-    IBlur = simulateCameraShake(I, IDims, 4)
+    IBlur = simulateCameraShake(I, IDims, 40)
     saveVideo(IBlur, IDims, "out.avi")

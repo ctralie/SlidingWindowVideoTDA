@@ -124,7 +124,7 @@ if __name__ == '__main__':
                 if os.path.exists("psFalse_%g_%i.mat"%(Noise, BlurExtent)):
                     psFalse = sio.loadmat("psFalse_%g_%i.mat"%(Noise, BlurExtent))['psFalse']
                 else:
-                    psFalse = runExperiments("Videos/drivingscene.mp4", BlockLen, BlockHop, win, dim, 20, Noise, BlurExtent)
+                    psFalse = runExperiments("Videos/drivingscene.mp4", BlockLen, BlockHop, win, dim, 50, Noise, BlurExtent)
                     sio.savemat("psFalse_%g_%i.mat"%(Noise, BlurExtent), {"psFalse":psFalse})
                 
                 #Plot ROC curve
