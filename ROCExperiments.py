@@ -108,7 +108,7 @@ if __name__ == '__main__':
     BlockHop = 80
     win = 20
     dim = 20
-    NRandDraws = 5
+    NRandDraws = 50
     
     #files = {'pendulum':'Videos/pendulum.avi', 'heart':'Videos/heartvariations.mp4', 'butterflies':'Videos/butterflies.mp4'}
     files = {'pendulum':'Videos/pendulum.avi'}
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     for name in files:
         filename = files[name]
         for Noise in [0.001, 0.1, 0.5, 1]:
-            for BlurExtent in [1, 2, 10, 20]:
+            for BlurExtent in [2, 10, 20, 40]:
                 psTrue = runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent)
                 sio.savemat("psTrue%s_%g_%i.mat"%(name, Noise, BlurExtent), {"psTrue":psTrue})
                 
