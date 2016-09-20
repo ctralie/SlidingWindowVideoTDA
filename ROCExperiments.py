@@ -35,62 +35,72 @@ def makePlot(X, PD):
     plt.bar(np.arange(len(eigs)), eigs)
     plt.title("Eigenvalues")
 
+
+def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix):
+    X = getPCAVideo(XOrig)
+    print("Finished PCA")
+    [X, validIdx] = getTimeDerivative(X, 10)
+    
+    #Setup video blocks
+    idxs = []
+    N = X.shape[0]
+    NBlocks = int(np.ceil(1 + (N - BlockLen)/BlockHop))
+    for k in range(NBlocks):
+        thisidxs = np.arange(k*BlockHop, k*BlockHop+BlockLen, dtype=np.int64)
+        thisidxs = thisidxs[thisidxs < N]
+        idxs.append(thisidxs)
+    
+    PDMax = []
+    XMax = []
+    maxP = 0
+    maxj = 0
+    persistences = []
+    for j in range(len(idxs)):
+        print("Block %i of %i"%(j, len(idxs)))
+        idx = idxs[j]
+        Tau = win/float(dim-1)
+        dT = (len(idx)-dim*Tau)/float(len(idx))
+        XS = getSlidingWindowVideo(X[idx, :], dim, Tau, dT)
+
+        #Mean-center and normalize sliding window
+        XS = XS - np.mean(XS, 1)[:, None]
+        XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
+        
+        PDs = doRipsFiltration(XS, 1)
+        if len(PDs) < 2:
+            continue
+        if PDs[1].size > 0:
+            thisMaxP = np.max(PDs[1][:, 1] - PDs[1][:, 0])
+            persistences.append(thisMaxP)
+            if thisMaxP > maxP:
+                maxP = thisMaxP
+                PDMax = PDs[1]
+                XMax = XS
+                maxj = j
+    if len(filePrefix) > 0 and len(XMax) > 0:
+        #Save an example persistence diagram for the max block
+        #from the first draw
+        print("Saving first block")
+        plt.clf()
+        makePlot(XMax, PDMax)
+        plt.savefig("%s_Stats.png"%filePrefix)
+        saveVideo(XOrig[idxs[maxj], :], FrameDims, "%s_max.ogg"%filePrefix)
+    return (PDMax, XMax, maxP, maxj, persistences)
+
 def runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent):
     print("PROCESSING ", filename, "....")
     persistences = []
     (XOrig, FrameDims) = loadVideo(filename)
     for i in range(NRandDraws):
+        filePrefix = ""
+        if i == 0: #Save a video and stats for the first random sample
+            filePrefix = "%s_%g_%i"%(filename, Noise, BlurExtent)
         print("Random draw %i of %i"%(i, NRandDraws))
         print("Doing PCA...")
         XSample = simulateCameraShake(XOrig, FrameDims, BlurExtent)
         XSample = XSample + Noise*np.random.randn(XOrig.shape[0], XOrig.shape[1])
-        X = getPCAVideo(XSample)
-        print("Finished PCA")
-        [X, validIdx] = getTimeDerivative(X, 10)
-        
-        #Setup video blocks
-        idxs = []
-        N = X.shape[0]
-        NBlocks = int(np.ceil(1 + (N - BlockLen)/BlockHop))
-        for k in range(NBlocks):
-            thisidxs = np.arange(k*BlockHop, k*BlockHop+BlockLen, dtype=np.int64)
-            thisidxs = thisidxs[thisidxs < N]
-            idxs.append(thisidxs)
-        
-        PDMax = []
-        XMax = []
-        maxP = 0
-        maxj = 0
-        for j in range(len(idxs)):
-            print("Block %i of %i"%(j, len(idxs)))
-            idx = idxs[j]
-            Tau = win/float(dim-1)
-            dT = (len(idx)-dim*Tau)/float(len(idx))
-            XS = getSlidingWindowVideo(X[idx, :], dim, Tau, dT)
-
-            #Mean-center and normalize sliding window
-            XS = XS - np.mean(XS, 1)[:, None]
-            XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
-            
-            PDs = doRipsFiltration(XS, 1)
-            if len(PDs) < 2:
-                continue
-            if PDs[1].size > 0:
-                thisMaxP = np.max(PDs[1][:, 1] - PDs[1][:, 0])
-                persistences.append(thisMaxP)
-                if thisMaxP > maxP:
-                    maxP = thisMaxP
-                    PDMax = PDs[1]
-                    XMax = XS
-                    maxj = j
-        if i == 0:
-            #Save an example persistence diagram for the max block
-            #from the first draw
-            print("Saving first block")
-            plt.clf()
-            makePlot(XMax, PDMax)
-            plt.savefig("%s_%g_%i_Stats.png"%(filename, Noise, BlurExtent))
-            saveVideo(XSample[idxs[maxj], :], FrameDims, "%s_%g_%i_max.ogg"%(filename, Noise, BlurExtent))
+        (PDMax, XMax, maxP, maxj, p) = processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix)
+        persistences = persistences + p
     return np.array(persistences)
 
 def getROC(T, F):
