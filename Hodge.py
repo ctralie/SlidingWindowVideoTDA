@@ -74,10 +74,11 @@ def doHodge(R, W, Y):
     #Step 2: Get local inconsistencies
     D1 = makeDelta1(R)
     B = WSqrtRecip*D1.T
-    resid = Y - D0.dot(s)
+    resid = Y - D0.dot(s)  #This has been verified to be orthogonal under <resid, D0*s>_W
+    
     u = wSqrt*resid
     Phi = lsqr(B, u)[0]
-    I = B.dot(Phi)
+    I = WSqrtRecip.dot(B.dot(Phi)) #Delta1* dot Phi, since Delta1* = (1/W) Delta1^T
     
     #Step 3: Get harmonic cocycle
     H = resid - I
@@ -144,39 +145,49 @@ def doRandomFlipExperimentsVary(N, AllPercentFlips, NTrials):
     plt.title('H Norm')
     plt.show()
 
+def getWNorm(X, W):
+    return np.sqrt(np.sum(W*X*X))
 
 #Do random flip experiments
 if __name__ == '__main__2':
-    np.random.seed(100)
-    N = 20
-    doRandomFlipExperimentsVary(N, np.linspace(0, 1, 100), 50)
+#    np.random.seed(100)
+#    N = 20
+#    doRandomFlipExperimentsVary(N, np.linspace(0, 1, 100), 50)
     
-#    N = 4
-#    I, J = np.meshgrid(np.arange(N), np.arange(N))
-#    I = I[np.triu_indices(N, 1)]
-#    J = J[np.triu_indices(N, 1)]
-#    NEdges = len(I)
-#    R = np.zeros((NEdges, 2))
-#    R[:, 0] = J
-#    R[:, 1] = I
-#    
-#    print makeDelta0(R).toarray()
-#    print makeDelta1(R).toarray()
+    N = 4
+    I, J = np.meshgrid(np.arange(N), np.arange(N))
+    I = I[np.triu_indices(N, 1)]
+    J = J[np.triu_indices(N, 1)]
+    NEdges = len(I)
+    R = np.zeros((NEdges, 2))
+    R[:, 0] = J
+    R[:, 1] = I
+    
+    print makeDelta0(R).toarray()
+    print makeDelta1(R).toarray()
 
 if __name__ == '__main__':
+    np.random.seed(17)
     R = sio.loadmat('R.mat')['R']
     [R, Y] = [R[:, 0:2], R[:, 2]]
-    W = np.ones(len(Y))
+    W = np.random.rand(len(Y))
+    #W = np.ones(len(Y))
     (s, I, H) = doHodge(R, W, Y)
     print np.argsort(s)
     
-    normY = np.linalg.norm(Y)
-    normD0s = np.linalg.norm(Y-H-I)
-    normI = np.linalg.norm(I)
-    normH = np.linalg.norm(H)
-    print "|D0s/Y| = ", (normD0s/normY)**2
-    print "Local Inconsistency = ", (normI/normY)**2
-    print "Global Inconsistency = ", (normH/normY)**2
+    normY = getWNorm(Y, W)
+    normD0s = getWNorm(Y-H-I, W)
+    normI = getWNorm(I, W)
+    normH = getWNorm(H, W)
+    
+    a = (normD0s/normY)**2
+    b = (normI/normY)**2
+    c = (normH/normY)**2
+    print "|D0s/Y| = ", a
+    print "Local Inconsistency = ", b
+    print "Global Inconsistency = ", c
+    
+    print "a + b + c = ", a + b + c
     
     #plt.plot(s)
     #plt.show()
