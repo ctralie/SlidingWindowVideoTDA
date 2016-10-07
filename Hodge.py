@@ -8,8 +8,10 @@ import time
 
 #R is a NEdges x 2 matrix specifying edges, where orientation
 #is taken from the first column to the second column
-#R specifies the "natural orientation" of the edges, with the understanding
-#that the ranking will be specified later
+#R specifies the "natural orientation" of the edges, with the
+#understanding that the ranking will be specified later
+#It is assumed that there is at least one edge incident
+#on every vertex
 def makeDelta0(R):
     NVertices = np.max(R) + 1
     NEdges = R.shape[0]
@@ -29,36 +31,45 @@ def makeDelta0(R):
     
     Delta = sparse.coo_matrix((V, (I, J)), shape=(NEdges, NVertices)).tocsr()
     return Delta
+    
+def get3Cliques(Edges):
+    [I, J, V] = [[], [], []]
+    NVertices = len(Edges)
+    for i in range(NVertices):
+        for j in Edges[i]:
+            if j < i:
+                continue
+            for k in Edges[j]:
+                if k < j or k < i:
+                    continue
+                if k in Edges[i]:
+                    TriNum = len(I)
+                    I.append([TriNum]*3)
+                    [a, b, c] = sorted([i, j, k])
+                    J.append([Edges[a][b], Edges[a][c], Edges[b][c]])
+                    V.append([1, -1, 1])
+    [I, J, V] = [1.0*np.array(a).flatten() for a in [I, J, V]]
+    return (I, J, V)
+        
 
 #R is edge list NEdges x 2
+#It is assumed that there is at least one edge incident
+#on every vertex
 def makeDelta1(R):
     NEdges = R.shape[0]
     NVertices = int(np.max(R))+1
-    NDigits = int(np.log(NVertices)/np.log(10))
-    
-    #Slow 3-clique (2 simplex) finding.  TODO: Speed up
-    edgeMap = {}
+    #Make a list of edges for fast lookup
+    Edges = []
+    for i in range(NVertices):
+        Edges.append({})
     for i in range(R.shape[0]):
-        edgeMap[(R[i, 0], R[i, 1])] = i
-    arr = np.arange(NEdges)
-    I = []
-    J = []
-    V = []
-    TriNum = 0
-    for A in range(NVertices):
-        for B in range(A+1, NVertices):
-            for C in range(B+1, NVertices):
-                e12 = (A, B)
-                e13 = (A, C)
-                e23 = (B, C)
-                if e12 in edgeMap and e13 in edgeMap and e23 in edgeMap:
-                    #The clique exists at some orientation so a row needs to be added
-                    I.append([TriNum]*3)
-                    J.append([edgeMap[a] for a in [e12, e13, e23]])
-                    V.append([1, -1, 1])
-                    TriNum += 1
-    [I, J, V] = [np.array(a).flatten() for a in [I, J, V]]
-    Delta1 = sparse.coo_matrix((V, (I, J)), shape=(TriNum, NEdges))
+        [a, b] = [int(R[i, 0]), int(R[i, 1])]
+        Edges[a][b] = i
+        Edges[b][a] = i    
+    
+    (I, J, V) = get3Cliques(Edges)
+    TriNum = len(I)/3
+    Delta1 = sparse.coo_matrix((V, (I, J)), shape = (TriNum, NEdges))    
     return Delta1
 
 #R is NEdges x 2 matrix specfiying comparisons that have been made
@@ -111,7 +122,8 @@ def getWNorm(X, W):
 
 #Do an experiment with a full 4-clique to make sure 
 #that delta0 and delta1 look right
-if __name__ == '__main__2':
+if __name__ == '__main__':
+    np.random.seed(50)
     N = 4
     I, J = np.meshgrid(np.arange(N), np.arange(N))
     I = I[np.triu_indices(N, 1)]
@@ -119,7 +131,6 @@ if __name__ == '__main__2':
     NEdges = len(I)
     R = np.zeros((NEdges, 2))
     R[:, 0] = J
-    R[:, 1] = I
-    
+    R[:, 1] = I    
     print makeDelta0(R).toarray()
     print makeDelta1(R).toarray()

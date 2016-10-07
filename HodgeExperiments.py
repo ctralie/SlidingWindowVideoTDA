@@ -33,7 +33,7 @@ def doTotalOrderExperiment(N, binaryWeights = False):
     if binaryWeights:
         Y = np.ones(NEdges)
         
-    (s, I, H) = doHodge(R, W, Y)
+    (s, I, H) = doHodge(R, W, Y, verbose = True)
     printConsistencyRatios(Y, I, H, W)
 
 #Random flip experiment with linear order
@@ -82,8 +82,11 @@ def doRandomFlipExperimentsVaryPercent(N, AllPercentFlips, NTrials):
     plt.title('H Norm')
     plt.show()
 
-#Do random flip experiments
 if __name__ == '__main__':
+    doTotalOrderExperiment(600)
+
+#Do random flip experiments
+if __name__ == '__main__2':
     np.random.seed(100)
     N = 20
     doRandomFlipExperimentsVaryPercent(N, np.linspace(0, 1, 100), 50)
