@@ -28,7 +28,10 @@ def makePlot(X, PD):
 
     ax = plt.subplot(223)
     ax.set_title("PCA of Sliding Window Embedding")
-    ax.scatter(Y[:, 0], Y[:, 1])
+    c = plt.get_cmap('jet')
+    C = c(np.array(np.round(np.linspace(0, 255, Y.shape[0])), dtype=np.int32))
+    C = C[:, 0:3]
+    ax.scatter(Y[:, 0], Y[:, 1], c = C)
     ax.set_aspect('equal', 'datalim')
     
     plt.subplot(224)
@@ -45,6 +48,7 @@ def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix):
     idxs = []
     N = X.shape[0]
     NBlocks = int(np.ceil(1 + (N - BlockLen)/BlockHop))
+    print "X.shape[0] = %i, NBlocks = %i"%(X.shape[0], NBlocks)
     for k in range(NBlocks):
         thisidxs = np.arange(k*BlockHop, k*BlockHop+BlockLen, dtype=np.int64)
         thisidxs = thisidxs[thisidxs < N]

@@ -9,7 +9,7 @@ if __name__ == "__main__":
     win = 20
     dim = 20
     for i in range(10):
-        (XOrig, FrameDims) = loadVideo("Initial10/%i.ogg"%(i+1))
+        (XOrig, FrameDims) = loadVideo("Initial10/%i.ogg"%i)
         (_, _, s, _, _) = processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, "Initial10/%iResults"%i)
         scores.append(s)
     scores = np.array(scores)

@@ -1,5 +1,6 @@
 addpath(genpath('toolbox-master'));
-actions = {'high_jump', 'diving_springboard_3m', 'discus_throw'};
+%actions = {'high_jump', 'diving_springboard_3m', 'discus_throw'};
+actions = {'bowling'};
 
 for ii = 1:length(actions)
     counter = 0;

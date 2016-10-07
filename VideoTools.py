@@ -122,6 +122,7 @@ def saveVideo(I, IDims, filename, FrameRate = 30, YCbCr = False, Normalize = Fal
 def getPCAVideo(I):
     ICov = I.dot(I.T)
     [lam, V] = linalg.eigh(ICov)
+    lam[lam < 0] = 0
     V = V*np.sqrt(lam[None, :])
     return V
 
