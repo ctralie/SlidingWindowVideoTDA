@@ -1,12 +1,24 @@
 import numpy as np
 import scipy
 from scipy import sparse
+cimport numpy as np
+from cpython cimport array
+import array
+
+
+cdef array.array int_array_template = array.array('i', [])
 
 #Brute force function to check for all 3 cliques by checking
 #mutual neighbors between 3 vertices
 def get3CliquesBrute(Edges):
     [I, J, V] = [[], [], []]
     NVertices = len(Edges)
+    MaxNum = NVertices*(NVertices-1)*(NVertices-2)/6
+    J = np.zeros((MaxNum, 3))
+    cdef int i = 0
+    cdef int j = 0
+    cdef int k = 0
+    edgeNum = 0
     for i in range(NVertices):
         for j in Edges[i]:
             if j < i:
@@ -15,11 +27,17 @@ def get3CliquesBrute(Edges):
                 if k < j or k < i:
                     continue
                 if k in Edges[i]:
-                    TriNum = len(I)
-                    I.append([TriNum]*3)
                     [a, b, c] = sorted([i, j, k])
-                    J.append([Edges[a][b], Edges[a][c], Edges[b][c]])
-                    V.append([1, -1, 1])
+                    J[edgeNum, :] = [Edges[a][b], Edges[a][c], Edges[b][c]]
+                    edgeNum += 1
+    J = J[0:edgeNum, :]
+    V = np.zeros(J.shape)    
+    V[:, 0] = 1
+    V[:, 1] = -1
+    V[:, 2] = 1
+    I = np.zeros(J.shape)
+    for k in range(3):
+        I[:, k] = np.arange(I.shape[0])
     return (I, J, V)
 
 #Recursive function to find all of the maximal cliques
@@ -31,28 +49,42 @@ def BronKerbosch(C, U, X, E, Cliques, callOrder = 0, verbose = False):
         Cliques.append(C)
         return
     #Choose a pivot vertex u in U union X
-    i = np.random.randint(len(U)+len(X))
-    upivot = 0
+    cdef int i = np.random.randint(len(U)+len(X))
+    cdef int u
+    cdef int v
+    cdef int upivot = 0
     if i >= len(U):
         upivot = X[i-len(U)]
     else:
         upivot = U[i]
-    UList = []
+    cdef array.array UList
+    UList = array.clone(int_array_template, len(U), zero=False)
+    i = 0
     #For each vertex v in U \ N(u)
     for u in U:
         if not (E[u, upivot] or E[upivot, u]):
-            UList.append(u)
+            UList[i] = u
+            i += 1
+    array.resize(UList, i)
+    cdef array.array UNew
+    cdef array.array XNew
     for v in UList:
         #UNew = U intersect N(v)
-        UNew = []
+        UNew = array.clone(int_array_template, len(U), zero=False)
+        i = 0
         for u in U:
             if E[u, v] or E[v, u]:
-                UNew.append(u)
+                UNew[i] = u
+                i += 1
+        array.resize(UNew, i)
         #XNew = X intersect N(v)
-        XNew = []
+        XNew = array.clone(int_array_template, len(X), zero=False)
+        i = 0
         for x in X:
             if E[x, v] or E[v, x]:
-                XNew.append(x)
+                XNew[i] = x
+                i += 1
+        array.resize(XNew, i)
         if verbose:
             print "%sBK(%s, %s, %s)"%("\t"*callOrder, C + [v], UNew, XNew)
         BronKerbosch(C + [v], UNew, XNew, E, Cliques, callOrder + 1, verbose)

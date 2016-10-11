@@ -49,24 +49,33 @@ def makeDelta1(R):
         Edges[a][b] = i
         Edges[b][a] = i    
     
+    tic = time.time()
     (I, J, V) = get3CliquesBrute(Edges)
-    [I, J, V] = [np.array(a).flatten() for a in [I, J, V]]
+    toc = time.time()
+    print "Elapsed time 3 cliques brute: ", toc - tic
+    [I, J, V] = [a.flatten() for a in [I, J, V]]
     TriNum = len(I)/3
     Delta1 = sparse.coo_matrix((V, (I, J)), shape = (TriNum, NEdges)).tocsr()
     
-    [C, X, Cliques] = [[], [], []]
-    E = sparse.coo_matrix((1+np.arange(NEdges), (R[:, 0], R[:, 1])), shape = (NVertices, NVertices)).tocsr()
-    
-    U = range(NVertices)
-    #print "BK(%s, %s, %s)"%(C, U, X)
-    BronKerbosch(C, U, X, E, Cliques, verbose = False)
-    TriNum = len(I)/3
-    (I, J, V) = get3CliquesFromMaxCliques(Cliques, E)
-    [I, J, V] = [np.array(a).flatten() for a in [I, J, V]]
-    Delta1B = sparse.coo_matrix((V, (I, J)), shape = (TriNum, NEdges)).tocsr()
-    
-    print "Matrices are the same: ", compareBoundaryMatricesModPerm(Delta1, Delta1B)
-    print np.sum(Delta1.toarray() - Delta1B.toarray())
+#    [C, X, Cliques] = [[], [], []]
+#    E = sparse.coo_matrix((1+np.arange(NEdges), (R[:, 0], R[:, 1])), shape = (NVertices, NVertices)).tocsr()
+#    
+#    U = range(NVertices)
+#    #print "BK(%s, %s, %s)"%(C, U, X)
+#    tic = time.time()
+#    BronKerbosch(C, U, X, E, Cliques, verbose = False)
+#    toc = time.time()
+#    print "Elapsed time Bron Kerbosch: ", toc-tic
+#    TriNum = len(I)/3
+#    tic = time.time()
+#    (I, J, V) = get3CliquesFromMaxCliques(Cliques, E)
+#    toc = time.time()
+#    print "Elapsed time extract 3 cliques: ", toc-tic
+#    [I, J, V] = [np.array(a).flatten() for a in [I, J, V]]
+#    Delta1B = sparse.coo_matrix((V, (I, J)), shape = (TriNum, NEdges)).tocsr()
+#    
+#    print "Matrices are the same: ", compareBoundaryMatricesModPerm(Delta1, Delta1B)
+#    print np.sum(np.abs(Delta1.toarray() - Delta1B.toarray()))
     
     return Delta1
 
@@ -122,7 +131,7 @@ def getWNorm(X, W):
 #that delta0 and delta1 look right
 if __name__ == '__main__':
     np.random.seed(10)
-    N = 100
+    N = 600
     I, J = np.meshgrid(np.arange(N), np.arange(N))
     I = I[np.triu_indices(N, 1)]
     J = J[np.triu_indices(N, 1)]
@@ -130,7 +139,7 @@ if __name__ == '__main__':
     R = np.zeros((NEdges, 2))
     R[:, 0] = J
     R[:, 1] = I    
-    R = R[np.random.permutation(R.shape[0])[0:R.shape[0]/2], :]
+    #R = R[np.random.permutation(R.shape[0])[0:R.shape[0]/2], :]
     makeDelta1(R)
     #print makeDelta0(R).toarray()
     #print makeDelta1(R).toarray()
