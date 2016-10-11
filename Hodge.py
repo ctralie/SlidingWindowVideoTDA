@@ -32,7 +32,9 @@ def makeDelta0(R):
     Delta = sparse.coo_matrix((V, (I, J)), shape=(NEdges, NVertices)).tocsr()
     return Delta
     
-def get3Cliques(Edges):
+#Brute force function to check for all 3 cliques by checking
+#mutual neighbors between 3 vertices
+def get3CliquesBrute(Edges):
     [I, J, V] = [[], [], []]
     NVertices = len(Edges)
     for i in range(NVertices):
@@ -50,7 +52,66 @@ def get3Cliques(Edges):
                     V.append([1, -1, 1])
     [I, J, V] = [1.0*np.array(a).flatten() for a in [I, J, V]]
     return (I, J, V)
-        
+
+#Recursive function to find all of the maximal cliques
+def BronKerbosch(C, U, X, E, Cliques, callOrder = 0, verbose = False):
+    if len(U) == 0 and len(X) == 0:
+        if verbose:
+            print "%sFound clique "%("\t"*callOrder), C
+        C = sorted(C)
+        Cliques.append(C)
+        return
+    for i in range(len(U)):
+        v = U[i]
+        #UNew = U intersect N(v)
+        UNew = []
+        for u in U[i::]:
+            if E[u, v] or E[v, u]:
+                UNew.append(u)
+        #XNew = X intersect N(v)
+        XNew = []
+        for x in X:
+            if E[x, v] or E[v, x]:
+                XNew.append(x)
+        if verbose:
+            print "%sBK(%s, %s, %s)"%("\t"*callOrder, C + [v], UNew, XNew)
+        BronKerbosch(C + [v], UNew, XNew, E, Cliques, callOrder + 1, verbose)
+        X.append(v)
+
+#Extract 3 cliques from maximal cliques, given an array 
+#with edge indices
+def get3CliquesFromMaxCliques(Cliques, E):
+    cliques = set()
+    [I, J, V] = [[], [], []]
+    for c in Cliques:
+        for i in range(len(c)):
+            for j in range(i+1, len(c)):
+                for k in range(j+1, len(c)):
+                    cliques.add((c[i], c[j], c[k]))
+    for c in cliques:
+        I.append(3*[len(I)])
+        J.append([E[c[0], c[1]]-1, E[c[0], c[2]]-1, E[c[1], c[2]]-1])
+        V.append([1.0, -1.0, 1.0])
+    [I, J, V] = [np.array(a).flatten() for a in [I, J, V]]
+    return (I, J, V)
+
+#Compare boundary matrices up to a permutation of the rows
+def compareBoundaryMatricesModPerm(A, B):
+    setA = set()
+    for i in range(A.shape[0]): #Assuming csr
+        a = A[i, :]
+        a = a.tocoo()
+        arr = tuple(a.col.tolist() + a.data.tolist())
+        setA.add(arr)
+    setB = set()
+    for i in range(B.shape[0]):
+        b = B[i, :]
+        b = b.tocoo()
+        arr = tuple(b.col.tolist() + b.data.tolist())
+        setB.add(arr)
+    if len(setA.difference(setB)) > 0 or len(setB.difference(setA)) > 0:
+        return False
+    return True
 
 #R is edge list NEdges x 2
 #It is assumed that there is at least one edge incident
@@ -67,9 +128,23 @@ def makeDelta1(R):
         Edges[a][b] = i
         Edges[b][a] = i    
     
-    (I, J, V) = get3Cliques(Edges)
+    (I, J, V) = get3CliquesBrute(Edges)
     TriNum = len(I)/3
-    Delta1 = sparse.coo_matrix((V, (I, J)), shape = (TriNum, NEdges))    
+    Delta1 = sparse.coo_matrix((V, (I, J)), shape = (TriNum, NEdges)).tocsr()
+    
+    [C, X, Cliques] = [[], [], []]
+    E = sparse.coo_matrix((1+np.arange(NEdges), (R[:, 0], R[:, 1])), shape = (NVertices, NVertices)).tocsr()
+    
+    U = range(NVertices)
+    #print "BK(%s, %s, %s)"%(C, U, X)
+    BronKerbosch(C, U, X, E, Cliques, verbose = False)
+    TriNum = len(I)/3
+    [I, J, V] = get3CliquesFromMaxCliques(Cliques, E)
+    Delta1B = sparse.coo_matrix((V, (I, J)), shape = (TriNum, NEdges)).tocsr()
+    
+    print "Matrices are the same: ", compareBoundaryMatricesModPerm(Delta1, Delta1B)
+    print np.sum(Delta1.toarray() - Delta1B.toarray())
+    
     return Delta1
 
 #R is NEdges x 2 matrix specfiying comparisons that have been made
@@ -123,8 +198,8 @@ def getWNorm(X, W):
 #Do an experiment with a full 4-clique to make sure 
 #that delta0 and delta1 look right
 if __name__ == '__main__':
-    np.random.seed(50)
-    N = 4
+    np.random.seed(100)
+    N = 100
     I, J = np.meshgrid(np.arange(N), np.arange(N))
     I = I[np.triu_indices(N, 1)]
     J = J[np.triu_indices(N, 1)]
@@ -132,5 +207,11 @@ if __name__ == '__main__':
     R = np.zeros((NEdges, 2))
     R[:, 0] = J
     R[:, 1] = I    
-    print makeDelta0(R).toarray()
-    print makeDelta1(R).toarray()
+    #R = R[np.random.permutation(R.shape[0])[0:2*N], :]
+    #print R[-1, :]
+    #R = R[0:-1, :]
+    #R = R[1:, :]
+    #print R
+    makeDelta1(R)
+    #print makeDelta0(R).toarray()
+    #print makeDelta1(R).toarray()
