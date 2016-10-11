@@ -61,11 +61,22 @@ def BronKerbosch(C, U, X, E, Cliques, callOrder = 0, verbose = False):
         C = sorted(C)
         Cliques.append(C)
         return
-    for i in range(len(U)):
-        v = U[i]
+    #Choose a pivot vertex u in U union X
+    i = np.random.randint(len(U)+len(X))
+    upivot = 0
+    if i >= len(U):
+        upivot = X[i-len(U)]
+    else:
+        upivot = U[i]
+    UList = []
+    #For each vertex v in U \ N(u)
+    for u in U:
+        if not (E[u, upivot] or E[upivot, u]):
+            UList.append(u)
+    for v in UList:
         #UNew = U intersect N(v)
         UNew = []
-        for u in U[i::]:
+        for u in U:
             if E[u, v] or E[v, u]:
                 UNew.append(u)
         #XNew = X intersect N(v)
@@ -76,6 +87,7 @@ def BronKerbosch(C, U, X, E, Cliques, callOrder = 0, verbose = False):
         if verbose:
             print "%sBK(%s, %s, %s)"%("\t"*callOrder, C + [v], UNew, XNew)
         BronKerbosch(C + [v], UNew, XNew, E, Cliques, callOrder + 1, verbose)
+        U.remove(v)
         X.append(v)
 
 #Extract 3 cliques from maximal cliques, given an array 
@@ -198,7 +210,7 @@ def getWNorm(X, W):
 #Do an experiment with a full 4-clique to make sure 
 #that delta0 and delta1 look right
 if __name__ == '__main__':
-    np.random.seed(100)
+    np.random.seed(10)
     N = 100
     I, J = np.meshgrid(np.arange(N), np.arange(N))
     I = I[np.triu_indices(N, 1)]
@@ -207,11 +219,7 @@ if __name__ == '__main__':
     R = np.zeros((NEdges, 2))
     R[:, 0] = J
     R[:, 1] = I    
-    #R = R[np.random.permutation(R.shape[0])[0:2*N], :]
-    #print R[-1, :]
-    #R = R[0:-1, :]
-    #R = R[1:, :]
-    #print R
+    R = R[np.random.permutation(R.shape[0])[0:R.shape[0]/2], :]
     makeDelta1(R)
     #print makeDelta0(R).toarray()
     #print makeDelta1(R).toarray()
