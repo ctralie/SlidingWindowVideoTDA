@@ -138,7 +138,7 @@ def doBatchExperiments(N, omissions, flips, NTrials = 10):
 if __name__ == '__main__':
     N = 600
     omissions = np.linspace(0.9, 0.99, 10)
-    flips = np.linspace(0, 0.9, 10)
+    flips = np.linspace(0, 0.9, 41)
     NTrials = 10
     doBatchExperiments(N, omissions, flips, NTrials)
 
