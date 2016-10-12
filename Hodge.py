@@ -57,26 +57,6 @@ def makeDelta1(R):
     TriNum = len(I)/3
     Delta1 = sparse.coo_matrix((V, (I, J)), shape = (TriNum, NEdges)).tocsr()
     
-#    [C, X, Cliques] = [[], [], []]
-#    E = sparse.coo_matrix((1+np.arange(NEdges), (R[:, 0], R[:, 1])), shape = (NVertices, NVertices)).tocsr()
-#    
-#    U = range(NVertices)
-#    #print "BK(%s, %s, %s)"%(C, U, X)
-#    tic = time.time()
-#    BronKerbosch(C, U, X, E, Cliques, verbose = False)
-#    toc = time.time()
-#    print "Elapsed time Bron Kerbosch: ", toc-tic
-#    TriNum = len(I)/3
-#    tic = time.time()
-#    (I, J, V) = get3CliquesFromMaxCliques(Cliques, E)
-#    toc = time.time()
-#    print "Elapsed time extract 3 cliques: ", toc-tic
-#    [I, J, V] = [np.array(a).flatten() for a in [I, J, V]]
-#    Delta1B = sparse.coo_matrix((V, (I, J)), shape = (TriNum, NEdges)).tocsr()
-#    
-#    print "Matrices are the same: ", compareBoundaryMatricesModPerm(Delta1, Delta1B)
-#    print np.sum(np.abs(Delta1.toarray() - Delta1B.toarray()))
-    
     return Delta1
 
 #R is NEdges x 2 matrix specfiying comparisons that have been made
