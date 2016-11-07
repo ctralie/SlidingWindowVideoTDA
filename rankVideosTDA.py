@@ -8,14 +8,16 @@ if __name__ == "__main__":
     BlockHop = 80
     win = 20
     dim = 20
-    for i in range(10):
-        (XOrig, FrameDims) = loadVideo("Initial10/%i.ogg"%i)
-        (_, _, s, _, _) = processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, "Initial10/%iResults"%i)
+    foldername = "KTH/Subject1"
+    NVideos = 24
+    for i in range(NVideos):
+        (XOrig, FrameDims) = loadVideo("%s/%i.ogg"%(foldername, i))
+        (_, _, s, _, _) = processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, "%s/%iResults"%(foldername, i))
         scores.append(s)
     scores = np.array(scores)
-    
+
     #Output results in HTML format in descending order of maximum persistence
-    fout = open("Initial10/index.html", "w")
+    fout = open("%s/index.html"%foldername, "w")
     fout.write("<html><body><table border = '1'>")
     idx = np.argsort(-scores)
     count = 1
@@ -27,3 +29,4 @@ if __name__ == "__main__":
         count += 1
     fout.write("</table></body></html>")
     fout.close()
+    print idx

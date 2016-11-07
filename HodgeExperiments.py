@@ -130,12 +130,11 @@ def doBatchExperiments(N, omissions, flips, NTrials = 10):
                 (s, IM, H) = doHodge(R, W, Y, verbose = True)
                 Rankings[i, j, t, :] = s
                 [INorms[i, j, t], HNorms[i, j, t]] = [getWNorm(IM, W), getWNorm(H, W)]
-    
-                sio.savemat("BatchResults.mat", {"Rankings":Rankings, "INorms":INorms, "HNorms":HNorms, "omissions":omissions, "flips":flips})
-    KTScores = scoreBatchRankings(Rankings)
-    sio.savemat("BatchResults.mat", {"Rankings":Rankings, "INorms":INorms, "HNorms":HNorms, "KTScores":KTScores, "omissions":omissions, "flips":flips})
+        KTScores = scoreBatchRankings(Rankings)
+        sio.savemat("BatchResults.mat", {"Rankings":Rankings, "INorms":INorms, "HNorms":HNorms, "omissions":omissions, "flips":flips, "KTScores":KTScores})
 
 if __name__ == '__main__':
+    np.random.seed(100)
     N = 600
     omissions = np.linspace(0.9, 0.99, 10)
     flips = np.linspace(0, 0.9, 41)
