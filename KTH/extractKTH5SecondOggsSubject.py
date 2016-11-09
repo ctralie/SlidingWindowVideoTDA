@@ -13,7 +13,8 @@ def saveVideoID(I, IDims, fileprefix, ID, FrameRate = 30, NumberFrames = 30):
         frame[frame > 1] = 1
         mpimage.imsave("%s%i.png"%(TEMP_STR, i+1), frame)
     for i in range(NumberFrames):
-        command = ["convert", "%s%i.png"%(TEMP_STR, N), "-fill", "red", "-pointsize", "60", "-draw", 'text 20,60 %s%i%s'%("'", ID, "'"), "%s%i.png"%(TEMP_STR, N+i+1)]
+        command = ["convert", "%s%i.png"%(TEMP_STR, N), "-fill", "red", "-pointsize", "60", "-draw", 'text 20,60 %s%.3i%s'%("'", ID, "'"), "%s%i.png"%(TEMP_STR, N+i+1)]
+        print command
         subprocess.call(command)
         print N + i + 1
     #Convert to video using avconv
