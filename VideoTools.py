@@ -49,8 +49,8 @@ def loadVideo(path, YCbCr = False):
                     '-f', 'image2',
                     TEMP_STR + '%d.png']
         subprocess.call(command)
-    
-    #Step 2: Load in frame by frame  
+
+    #Step 2: Load in frame by frame
     #First figure out how many images there are
     #Note: Frames are 1-indexed
     NFrames = 0
@@ -106,9 +106,9 @@ def saveVideo(I, IDims, filename, FrameRate = 30, YCbCr = False, Normalize = Fal
     #Convert to video using avconv
     command = [AVCONV_BIN,
                 '-r', "%i"%FrameRate,
-                '-i', TEMP_STR + '%d.png', 
+                '-i', TEMP_STR + '%d.png',
                 '-r', "%i"%FrameRate,
-                '-b', '30000k', 
+                '-b', '30000k',
                 filename]
     subprocess.call(command)
     #Clean up
@@ -147,7 +147,7 @@ def getTimeDerivative(I, Win):
     sigma = 0.4*dw
     xgaussf = t*np.exp(-t**2  / (2*sigma**2))
     #Normalize by L1 norm to control for length of window
-    xgaussf = xgaussf/np.sum(np.abs(xgaussf)) 
+    xgaussf = xgaussf/np.sum(np.abs(xgaussf))
     xgaussf = xgaussf[:, None]
     IRet = scipy.signal.convolve2d(I, xgaussf, 'valid')
     validIdx = np.arange(dw, I.shape[0]-dw, dtype='int64')
@@ -182,14 +182,14 @@ def tde_mean(I, W):
 def tde_rightsvd(I, W, Mu):
     start_time = time.time()
     N = I.shape[1] #Number of frames in the video
-    
+
     ## Step 1: Precompute frame and mean correlations
     B = I.T.dot(I);
     MuFlat = Mu.flatten()
     MuFlat = np.reshape(MuFlat, [len(MuFlat), 1])
     MuTMu = MuFlat.T.dot(MuFlat)
     C = Mu.T.dot(I) #A WxN matrix
-    
+
     ## Step 2: Use precomputed information to compute (ID-Mu)^T*(ID-Mu)
     #Compute the ID^TID part
     ND = N-W+1
@@ -206,7 +206,7 @@ def tde_rightsvd(I, W, Mu):
         IDTID[np.arange(len(b2)), i + np.arange(len(b2))] = b2
     IDTID = IDTID + IDTID.T
     np.fill_diagonal(IDTID, 0.5*np.diag(IDTID)) #Main diagonal was counted twice
-    
+
     #Compute the Mu^TID part to subtract off mean
     MuTID = np.zeros((1, ND))
     for i in range(ND):
@@ -216,7 +216,7 @@ def tde_rightsvd(I, W, Mu):
     ATA = ATA + MuTMu
     #Handle numerical precision issues and keep it symmetric
     ATA = 0.5*(ATA + ATA.T)
-    
+
     ## Step 3: Compute right singular vectors
     [S, Y] = linalg.eigh(ATA)
     idx = np.argsort(-S)
@@ -248,7 +248,7 @@ def makeDriftingOscillatingSquare(NFrames = 200, NPeriods = 8, driftmag = 0, noi
     drift = np.concatenate((drift, drift), 1)
     I = np.zeros((X.size*3, NFrames))
     IDims = I.shape
-    
+
     for i in range(NFrames):
         mask = (np.abs(X-drift[i, 0]) < umask)*(abs(Y-drift[i,1]) < umask)
         v = ((wx*(X-drift[i, 0]) + wy*(Y-drift[i, 1]) - ts[i]) % (2*np.pi)) < np.pi
@@ -266,13 +266,29 @@ def makeSmoothGaussianSinusoid(NFrames = 200, NPeriods = 8, dim = 50):
     I = np.zeros((NFrames, dim*dim*3))
     ts = np.linspace(0, NPeriods*2*np.pi, NFrames+1)
     ts = ts[0:-1]
-    
+
     [X, Y] = np.meshgrid(np.arange(dim), np.arange(dim))
     G = np.zeros((dim, dim, 3))
     for k in range(3):
         G[:, :, k] = np.exp(-((X-float(dim/2))**2 + (Y-float(dim/2))**2)/(2*(dim/8)**2))
     for i in range(NFrames):
         f = G*np.cos(ts[i])
+        I[i, :] = f.flatten()
+    I = 0.5*(I + 1)
+    return (I, IDims)
+
+def make2GaussianPulses(NFrames = 200, T1 = 20, T2 = 20*np.pi, ydim = 50):
+    IDims = (ydim, ydim*2, 3)
+    I = np.zeros((NFrames, ydim*ydim*2*3))
+
+    [X, Y] = np.meshgrid(np.arange(ydim*2), np.arange(ydim))
+    G1 = np.zeros((ydim, ydim*2, 3))
+    G2 = np.zeros((ydim, ydim*2, 3))
+    for k in range(3):
+        G1[:, :, k] = np.exp(-((X-float(ydim/2))**2 + (Y-float(ydim/2))**2)/(2*(ydim/8)**2))
+        G2[:, :, k] = np.exp(-((X-float(ydim*3.0/2))**2 + (Y-float(ydim/2))**2)/(2*(ydim/8)**2))
+    for i in range(NFrames):
+        f = G1*np.cos(2*np.pi*i/T1) + G2*np.cos(2*np.pi*i/T2)
         I[i, :] = f.flatten()
     I = 0.5*(I + 1)
     return (I, IDims)
@@ -293,7 +309,6 @@ def simulateCameraShake(I, IDims, shakeMag):
         #IBlur = np.array(IBlur, dtype=np.uint8)
         J[i, :] = IBlur.flatten()
     return J
-
 
 if __name__ == '__main__':
     (I, IDims) = loadVideo("Videos/pendulum.avi")

@@ -33,7 +33,7 @@ def makePlot(X, PD):
     C = C[:, 0:3]
     ax.scatter(Y[:, 0], Y[:, 1], c = C)
     ax.set_aspect('equal', 'datalim')
-    
+
     plt.subplot(224)
     plt.bar(np.arange(len(eigs)), eigs)
     plt.title("Eigenvalues")
@@ -43,17 +43,20 @@ def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix):
     X = getPCAVideo(XOrig)
     print("Finished PCA")
     [X, validIdx] = getTimeDerivative(X, 10)
-    
+
     #Setup video blocks
     idxs = []
     N = X.shape[0]
-    NBlocks = int(np.ceil(1 + (N - BlockLen)/BlockHop))
-    print "X.shape[0] = %i, NBlocks = %i"%(X.shape[0], NBlocks)
-    for k in range(NBlocks):
-        thisidxs = np.arange(k*BlockHop, k*BlockHop+BlockLen, dtype=np.int64)
-        thisidxs = thisidxs[thisidxs < N]
-        idxs.append(thisidxs)
-    
+    if BlockLen == -1:
+        idxs = [np.arange(N)]
+    else:
+        NBlocks = int(np.ceil(1 + (N - BlockLen)/BlockHop))
+        print "X.shape[0] = %i, NBlocks = %i"%(X.shape[0], NBlocks)
+        for k in range(NBlocks):
+            thisidxs = np.arange(k*BlockHop, k*BlockHop+BlockLen, dtype=np.int64)
+            thisidxs = thisidxs[thisidxs < N]
+            idxs.append(thisidxs)
+
     PDMax = []
     XMax = []
     maxP = 0
@@ -69,7 +72,7 @@ def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix):
         #Mean-center and normalize sliding window
         XS = XS - np.mean(XS, 1)[:, None]
         XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
-        
+
         PDs = doRipsFiltration(XS, 1)
         if len(PDs) < 2:
             continue
@@ -123,7 +126,7 @@ if __name__ == '__main__':
     win = 20
     dim = 20
     NRandDraws = 50
-    
+
     #files = {'pendulum':'Videos/pendulum.avi', 'heart':'Videos/heartvariations.mp4', 'butterflies':'Videos/butterflies.mp4'}
     files = {'pendulum':'Videos/pendulum.avi'}
     #files = {'driving':"Videos/drivingscene.mp4"}
@@ -134,13 +137,13 @@ if __name__ == '__main__':
             for BlurExtent in [2, 10, 20, 40]:
                 psTrue = runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent)
                 sio.savemat("psTrue%s_%g_%i.mat"%(name, Noise, BlurExtent), {"psTrue":psTrue})
-                
+
                 if os.path.exists("psFalse_%g_%i.mat"%(Noise, BlurExtent)):
                     psFalse = sio.loadmat("psFalse_%g_%i.mat"%(Noise, BlurExtent))['psFalse']
                 else:
                     psFalse = runExperiments("Videos/drivingscene.mp4", BlockLen, BlockHop, win, dim, 50, Noise, BlurExtent)
                     sio.savemat("psFalse_%g_%i.mat"%(Noise, BlurExtent), {"psFalse":psFalse})
-                
+
                 #Plot ROC curve
                 (FP, TP) = getROC(psTrue, psFalse)
                 plt.clf()
@@ -151,7 +154,7 @@ if __name__ == '__main__':
                 plt.ylabel("True Positive Rate")
                 plt.title("ROC Curve")
                 plt.savefig("ROC_%s_%g_%i.svg"%(name, Noise, BlurExtent), bbox_inches='tight')
-                
+
                 #Plot histogram
                 plt.clf()
                 plt.hold(True)
