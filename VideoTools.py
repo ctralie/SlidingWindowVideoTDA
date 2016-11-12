@@ -7,7 +7,7 @@ import time
 import os
 import subprocess
 import matplotlib.image as mpimage
-import scipy
+import scipy.misc
 import scipy.signal
 from SyntheticCurves import * #For motion blur
 
@@ -80,6 +80,19 @@ def loadVideo(path, YCbCr = False):
             #Clean up temporary files
             os.remove(filename)
     print("\nFinished loading %s"%path)
+    return (I, IDims)
+
+def loadVideoFolder(foldername):
+    N = len(os.listdir(foldername))
+    #Assume numbering starts at zero
+    f0 = scipy.misc.imread("%s/%i.png"%(foldername, 0))
+    IDims = f0.shape
+    dim = len(f0.flatten())
+    I = np.zeros((N, dim))
+    I[0, :] = np.array(f0.flatten(), dtype=np.float32)/255.0
+    for i in range(1, N):
+        f = scipy.misc.imread("%s/%i.png"%(foldername, i))
+        I[i, :] = np.array(f.flatten(), dtype=np.float32)/255.0
     return (I, IDims)
 
 #Output video
@@ -289,6 +302,24 @@ def make2GaussianPulses(NFrames = 200, T1 = 20, T2 = 20*np.pi, ydim = 50):
         G2[:, :, k] = np.exp(-((X-float(ydim*3.0/2))**2 + (Y-float(ydim/2))**2)/(2*(ydim/8)**2))
     for i in range(NFrames):
         f = G1*np.cos(2*np.pi*i/T1) + G2*np.cos(2*np.pi*i/T2)
+        I[i, :] = f.flatten()
+    I = 0.5*(I + 1)
+    return (I, IDims)
+
+def make2ShakingCircles(NFrames = 200, T1 = 20, T2 = 20*np.pi, A1 = 10, A2 = 10, ydim = 50):
+    print "T1 = ", T1, ", T2 = ", T2
+    IDims = (ydim, ydim*2, 3)
+    I = np.zeros((NFrames, ydim*ydim*2*3))
+
+    [X, Y] = np.meshgrid(np.arange(ydim*2), np.arange(ydim))
+    yc = float(ydim/2)
+    R = float(ydim/8)
+    for i in range(NFrames):
+        x1c = float(ydim/2) - A1*np.cos(2*np.pi*i/T1)
+        x2c = 3*float(ydim/2) - A2*np.cos(2*np.pi*i/T2)
+        f = np.zeros((X.shape[0], X.shape[1], 3))
+        for k in range(3):
+            f[:, :, k] = ((X-x1c)**2 + (Y-yc)**2 < R**2) + ((X-x2c)**2 + (Y-yc)**2 < R**2)
         I[i, :] = f.flatten()
     I = 0.5*(I + 1)
     return (I, IDims)
