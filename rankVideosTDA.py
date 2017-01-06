@@ -8,7 +8,7 @@ if __name__ == "__main__":
     BlockHop = 80
     win = 20
     dim = 20
-    foldername = "KTH/Subject1"
+    foldername = "KTH/Subject2"
     NVideos = 24
     for i in range(NVideos):
         (XOrig, FrameDims) = loadVideo("%s/%i.ogg"%(foldername, i))

@@ -71,7 +71,7 @@ def getBottleneckDist(PD1, PD2):
     return float(proc.stdout.readline())
 
 
-def doRipsFiltrationDM(D, maxHomDim, thresh = -1):
+def doRipsFiltrationDM(D, maxHomDim, thresh = -1, coeff = 2):
     N = D.shape[0]
     #Step 1: Extract and output lower triangular distance matrix
     fout = open("DLower.txt", "w")
@@ -84,7 +84,7 @@ def doRipsFiltrationDM(D, maxHomDim, thresh = -1):
     callThresh = 2*np.max(D)
     if thresh > 0:
         callThresh = thresh
-    proc = subprocess.Popen(["ripser/ripser", "--dim", "%i"%maxHomDim, "--threshold", "%g"%callThresh, "DLower.txt"], stdout=subprocess.PIPE)
+    proc = subprocess.Popen(["ripser/ripser-coeff", "--dim", "%i"%maxHomDim, "--threshold", "%g"%callThresh, "--modulus", "%i"%coeff, "DLower.txt"], stdout=subprocess.PIPE)
     #stdout = proc.communicate()[0]
     PDs = []
     while True:
@@ -115,13 +115,13 @@ def doRipsFiltrationDM(D, maxHomDim, thresh = -1):
     return PDs
 
 #Wrapper around Uli Bauer's ripser code
-def doRipsFiltration(X, maxHomDim, thresh = -1):
+def doRipsFiltration(X, maxHomDim, thresh = -1, coeff = 2):
     #Compute all pairwise distances assuming Euclidean
     XSqr = np.sum(X**2, 1)
     D = XSqr[:, None] + XSqr[None, :] - 2*X.dot(X.T)
     D[D < 0] = 0 #Numerical precision
     D = np.sqrt(D)
-    return doRipsFiltrationDM(D, maxHomDim, thresh)
+    return doRipsFiltrationDM(D, maxHomDim, thresh, coeff)
     
 if __name__ == '__main__':
     np.random.seed(10)

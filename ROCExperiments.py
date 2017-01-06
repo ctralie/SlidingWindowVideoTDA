@@ -16,6 +16,7 @@ def makePlot(X, PD):
     #PCA
     pca = PCA(n_components = 20)
     Y = pca.fit_transform(X)
+    sio.savemat("PCA.mat", {"Y":Y})
     eigs = pca.explained_variance_
 
     plt.clf()
@@ -39,10 +40,12 @@ def makePlot(X, PD):
     plt.title("Eigenvalues")
 
 
-def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix):
+def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doDerivative = True, doSaveVideo = True):
+    print("Doing PCA...")
     X = getPCAVideo(XOrig)
     print("Finished PCA")
-    [X, validIdx] = getTimeDerivative(X, 10)
+    if doDerivative:
+        [X, validIdx] = getTimeDerivative(X, 10)
 
     #Setup video blocks
     idxs = []
@@ -51,7 +54,7 @@ def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix):
         idxs = [np.arange(N)]
     else:
         NBlocks = int(np.ceil(1 + (N - BlockLen)/BlockHop))
-        print "X.shape[0] = %i, NBlocks = %i"%(X.shape[0], NBlocks)
+        print("X.shape[0] = %i, NBlocks = %i"%(X.shape[0], NBlocks))
         for k in range(NBlocks):
             thisidxs = np.arange(k*BlockHop, k*BlockHop+BlockLen, dtype=np.int64)
             thisidxs = thisidxs[thisidxs < N]
@@ -91,7 +94,8 @@ def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix):
         plt.clf()
         makePlot(XMax, PDMax)
         plt.savefig("%s_Stats.png"%filePrefix)
-        saveVideo(XOrig[idxs[maxj], :], FrameDims, "%s_max.ogg"%filePrefix)
+        if doSaveVideo:
+            saveVideo(XOrig[idxs[maxj], :], FrameDims, "%s_max.ogg"%filePrefix)
     return (PDMax, XMax, maxP, maxj, persistences)
 
 def runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent):
@@ -103,8 +107,10 @@ def runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, Bl
         if i == 0: #Save a video and stats for the first random sample
             filePrefix = "%s_%g_%i"%(filename, Noise, BlurExtent)
         print("Random draw %i of %i"%(i, NRandDraws))
-        print("Doing PCA...")
-        XSample = simulateCameraShake(XOrig, FrameDims, BlurExtent)
+        if BlurExtent > 0:
+            XSample = simulateCameraShake(XOrig, FrameDims, BlurExtent)
+        else:
+            XSample = XOrig
         XSample = XSample + Noise*np.random.randn(XOrig.shape[0], XOrig.shape[1])
         (PDMax, XMax, maxP, maxj, p) = processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix)
         persistences = persistences + p
@@ -125,7 +131,7 @@ if __name__ == '__main__':
     BlockHop = 80
     win = 20
     dim = 20
-    NRandDraws = 50
+    NRandDraws = 200
 
     #files = {'pendulum':'Videos/pendulum.avi', 'heart':'Videos/heartvariations.mp4', 'butterflies':'Videos/butterflies.mp4'}
     files = {'pendulum':'Videos/pendulum.avi'}
@@ -133,15 +139,19 @@ if __name__ == '__main__':
     #files = {'explosions':'Videos/explosions.mp4'}
     for name in files:
         filename = files[name]
-        for Noise in [0.001, 0.1, 0.5, 1]:
-            for BlurExtent in [2, 10, 20, 40]:
-                psTrue = runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent)
-                sio.savemat("psTrue%s_%g_%i.mat"%(name, Noise, BlurExtent), {"psTrue":psTrue})
+        for Noise in [0]:#[0.001, 0.1, 0.5, 1]:
+            for BlurExtent in [20, 40, 80]:#[2, 10, 20, 40]:
+                if os.path.exists("psTrue%s_%g_%i.mat"%(name, Noise, BlurExtent)):
+                    print("Loading precomputed psTrue %s %g %i"%(name, Noise, BlurExtent))
+                    psTrue = sio.loadmat("psTrue%s_%g_%i.mat"%(name, Noise, BlurExtent))['psTrue']
+                else:
+                    psTrue = runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent)
+                    sio.savemat("psTrue%s_%g_%i.mat"%(name, Noise, BlurExtent), {"psTrue":psTrue})
 
                 if os.path.exists("psFalse_%g_%i.mat"%(Noise, BlurExtent)):
                     psFalse = sio.loadmat("psFalse_%g_%i.mat"%(Noise, BlurExtent))['psFalse']
                 else:
-                    psFalse = runExperiments("Videos/drivingscene.mp4", BlockLen, BlockHop, win, dim, 50, Noise, BlurExtent)
+                    psFalse = runExperiments("Videos/drivingscene.ogg", BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent)
                     sio.savemat("psFalse_%g_%i.mat"%(Noise, BlurExtent), {"psFalse":psFalse})
 
                 #Plot ROC curve

@@ -67,10 +67,10 @@ def loadVideo(path, YCbCr = False):
     IDims = F0.shape
     #Now load in the video
     I = np.zeros((NFrames, F0.size))
-    print "Loading video.",
+    print("Loading video.")
     for i in range(NFrames):
         if i%20 == 0:
-            print ".",
+            print(".")
         filename = "%s%i.png"%(prefix, i+1)
         IM = mpimage.imread(filename)
         if YCbCr:
@@ -81,6 +81,55 @@ def loadVideo(path, YCbCr = False):
             os.remove(filename)
     print("\nFinished loading %s"%path)
     return (I, IDims)
+
+#Returns: tuple (Video NxP array, dimensions of video)
+def loadVideoCV(path):
+    import cv2
+    if not os.path.exists(path):
+        print("ERROR: Video path not found: %s"%path)
+        return None
+    #Step 1: Figure out if path is a folder or a filename
+    prefix = "%s/"%path
+    isFile = False
+    if os.path.isfile(path):
+        isFile = True
+        #If it's a filename, use avconv to split it into temporary frame
+        #files and load them in
+        prefix = TEMP_STR
+        command = [AVCONV_BIN,
+                    '-i', path,
+                    '-f', 'image2',
+                    TEMP_STR + '%d.png']
+        subprocess.call(command)
+
+    #Step 2: Load in frame by frame
+    #First figure out how many images there are
+    #Note: Frames are 1-indexed
+    NFrames = 0
+    while True:
+        filename = "%s%i.png"%(prefix, NFrames+1)
+        if os.path.exists(filename):
+            NFrames += 1
+        else:
+            break
+    if NFrames == 0:
+        print("ERROR: No frames loaded")
+        return (None, None)
+    F0 = cv2.imread("%s1.png"%prefix)
+    #Now load in the video
+    Vid = [F0]
+    print("Loading video.")
+    for i in range(NFrames):
+        if i%20 == 0:
+            print(".")
+        filename = "%s%i.png"%(prefix, i+1)
+        IM = cv2.imread(filename)
+        Vid.append(IM)
+        if isFile:
+            #Clean up temporary files
+            os.remove(filename)
+    print("\nFinished loading %s"%path)
+    return Vid
 
 def loadVideoFolder(foldername):
     N = len(os.listdir(foldername))
@@ -307,7 +356,7 @@ def make2GaussianPulses(NFrames = 200, T1 = 20, T2 = 20*np.pi, ydim = 50):
     return (I, IDims)
 
 def make2ShakingCircles(NFrames = 200, T1 = 20, T2 = 20*np.pi, A1 = 10, A2 = 10, ydim = 50):
-    print "T1 = ", T1, ", T2 = ", T2
+    print("T1 = ", T1, ", T2 = ", T2)
     IDims = (ydim, ydim*2, 3)
     I = np.zeros((NFrames, ydim*ydim*2*3))
 
