@@ -20,7 +20,7 @@ def runExperiments(foldername, packetLoss, NDraws, BlockLen, BlockHop, win, dim,
             thisfilePrefix = ""
         (PDMax, XMax, maxP, maxj, p) = processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, thisfilePrefix)
         persistences = persistences + p
-    return persistences
+    return np.array(persistences)
 
 if __name__ == '__main__':
     BlockLen = 160
