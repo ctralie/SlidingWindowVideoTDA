@@ -5,15 +5,49 @@ import scipy
 from scipy import sparse
 from scipy.sparse.linalg import lsqr, cg, eigsh
 import time
+import jellyfish
 from CliqueAlgorithms import *
 
-#R is a NEdges x 2 matrix specifying edges, where orientation
-#is taken from the first column to the second column
-#R specifies the "natural orientation" of the edges, with the
-#understanding that the ranking will be specified later
-#It is assumed that there is at least one edge incident
-#on every vertex
+
+def getKendallTau(order1, order2):
+    """
+    Given two global rankings, return the Kendall Tau Score
+    """
+    N = len(order1)
+    rank1 = np.zeros(N)
+    rank1[order1] = np.arange(N)
+    rank2 = np.zeros(N)
+    rank2[order2] = np.arange(N)
+    A = np.sign(rank1[None, :] - rank1[:, None])
+    B = np.sign(rank2[None, :] - rank2[:, None])
+    return np.sum(A*B)/float(N*(N-1))
+    #tau, p_value = scipy.stats.kendalltau(rank1, rank2)
+
+
+def getJWDistance(order1, order2):
+    """
+    Given two global rankings, return the Jaro Winkler Distance
+    """
+    s = u"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    s1 = u""
+    s2 = u""
+    for i in range(len(order1)):
+        s1 += s[order1[i]]
+    for i in range(len(order2)):
+        s2 += s[order2[i]]
+    return jellyfish.jaro_winkler(s1, s2)
+    
+
 def makeDelta0(R):
+    """
+    Return the delta0 coboundary matrix
+    :param R: NEdges x 2 matrix specifying edges, where orientation
+    is taken from the first column to the second column
+    R specifies the "natural orientation" of the edges, with the
+    understanding that the ranking will be specified later
+    It is assumed that there is at least one edge incident
+    on every vertex
+    """
     NVertices = np.max(R) + 1
     NEdges = R.shape[0]
     
@@ -34,10 +68,11 @@ def makeDelta0(R):
     return Delta
     
 
-#R is edge list NEdges x 2
-#It is assumed that there is at least one edge incident
-#on every vertex
 def makeDelta1(R):
+    """Make the delta1 coboundary matrix
+    :param R: Edge list NEdges x 2. It is assumed that 
+    there is at least one edge incident on every vertex
+    """
     NEdges = R.shape[0]
     NVertices = int(np.max(R))+1
     #Make a list of edges for fast lookup
@@ -59,10 +94,16 @@ def makeDelta1(R):
     
     return Delta1
 
-#R is NEdges x 2 matrix specfiying comparisons that have been made
-#W is a flat array of NEdges weights parallel to the rows of R
-#Y is a flat array of NEdges specifying preferences
+
 def doHodge(R, W, Y, verbose = False):
+    """
+    Given 
+    :param R: NEdges x 2 matrix specfiying comparisons that have been made
+    :param W: A flat array of NEdges weights parallel to the rows of R
+    :param Y: A flat array of NEdges specifying preferences
+    :returns: (s, I, H): s is scalar function, I is local inconsistency vector,
+        H is global inconsistency vector
+    """
     #Step 1: Get s
     if verbose:
         print "Making Delta0..."

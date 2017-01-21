@@ -1,6 +1,7 @@
 import numpy as np
 from ROCExperiments import *
 from VideoTools import *
+import scipy.io as sio
 
 if __name__ == "__main__":
     scores = []
@@ -30,3 +31,13 @@ if __name__ == "__main__":
     fout.write("</table></body></html>")
     fout.close()
     print idx
+    
+    R = []
+    for i in range(len(idx)):
+        for j in range(i+1, len(idx)):
+            rel = 1
+            if idx[i] < idx[j]:
+                R.append([idx[i], idx[j], 1])
+            else:
+                R.append([idx[j], idx[i], -1])
+    sio.savemat("TurkResults/TDARankings.mat", {"R":np.array(R)})

@@ -7,6 +7,8 @@ import os
 
 
 def makePlot(X, PD):
+    if X.size == 0:
+        return
     #Self-similarity matrix
     XSqr = np.sum(X**2, 1).flatten()
     D = XSqr[:, None] + XSqr[None, :] - 2*X.dot(X.T)
@@ -61,7 +63,7 @@ def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doD
             idxs.append(thisidxs)
 
     PDMax = []
-    XMax = []
+    XMax = np.array([])
     maxP = 0
     maxj = 0
     persistences = []

@@ -1,11 +1,5 @@
 import numpy as np
 from Hodge import *
-
-def getKendallTau(rank1, rank2):
-    N = len(rank1)
-    A = np.sign(rank1[None, :] - rank1[:, None])
-    B = np.sign(rank2[None, :] - rank2[:, None])
-    return np.sum(A*B)/float(N*(N-1))
     
 
 def printConsistencyRatios(Y, I, H, W):
