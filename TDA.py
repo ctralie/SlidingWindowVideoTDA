@@ -7,24 +7,28 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 
-def plotDGM(dgm, color = 'b', sz = 20, label = 'dgm'):
+def plotDGM(dgm, color = 'b', sz = 20, label = 'dgm', axcolor = np.array([0.0, 0.0, 0.0]), marker = None):
     if dgm.size == 0:
         return
     # Create Lists
     # set axis values
     axMin = np.min(dgm)
     axMax = np.max(dgm)
-    axRange = axMax-axMin;
-    # plot points
-    plt.scatter(dgm[:, 0], dgm[:, 1], sz, color,label=label)
-    plt.hold(True)
+    axRange = axMax-axMin
     # plot line
-    plt.plot([axMin-axRange/5,axMax+axRange/5], [axMin-axRange/5, axMax+axRange/5],'k');
+    plt.plot([axMin-axRange/5,axMax+axRange/5], [axMin-axRange/5, axMax+axRange/5], c = axcolor, label = 'none')
+    plt.hold(True)
+    # plot points
+    if marker:
+        H = plt.scatter(dgm[:, 0], dgm[:, 1], sz, color, marker, label=label, edgecolor = 'none')
+    else:
+        H = plt.scatter(dgm[:, 0], dgm[:, 1], sz, color, label=label, edgecolor = 'none')
     # adjust axis
     #plt.axis([axMin-axRange/5,axMax+axRange/5, axMin-axRange/5, axMax+axRange/5])
     # add labels
     plt.xlabel('Time of Birth')
     plt.ylabel('Time of Death')
+    return H
 
 def plotDGMAx(ax, dgm, color = 'b', sz = 20, label = 'dgm'):
     if dgm.size == 0:
@@ -79,12 +83,15 @@ def doRipsFiltrationDM(D, maxHomDim, thresh = -1, coeff = 2):
         for j in range(0, i):
             fout.write("%g "%D[i, j])
     fout.close()
-    
+
     #Step 2: Call ripser
     callThresh = 2*np.max(D)
     if thresh > 0:
         callThresh = thresh
-    proc = subprocess.Popen(["ripser/ripser-coeff", "--dim", "%i"%maxHomDim, "--threshold", "%g"%callThresh, "--modulus", "%i"%coeff, "DLower.txt"], stdout=subprocess.PIPE)
+    if coeff > 2:
+        proc = subprocess.Popen(["ripser/ripser-coeff", "--dim", "%i"%maxHomDim, "--threshold", "%g"%callThresh, "--modulus", "%i"%coeff, "DLower.txt"], stdout=subprocess.PIPE)
+    else:
+        proc = subprocess.Popen(["ripser/ripser", "--dim", "%i"%maxHomDim, "--threshold", "%g"%callThresh, "DLower.txt"], stdout=subprocess.PIPE)
     #stdout = proc.communicate()[0]
     PDs = []
     while True:
@@ -122,13 +129,13 @@ def doRipsFiltration(X, maxHomDim, thresh = -1, coeff = 2):
     D[D < 0] = 0 #Numerical precision
     D = np.sqrt(D)
     return doRipsFiltrationDM(D, maxHomDim, thresh, coeff)
-    
+
 if __name__ == '__main__':
     np.random.seed(10)
     X = np.random.randn(200, 2)
     X = X/np.sqrt(np.sum(X**2, 1)[:, None])
     #plt.plot(X[:, 0], X[:, 1], '.')
     #plt.show()
-    PDs = doRipsFiltration(X, 1)
+    PDs = doRipsFiltration(X, 1, coeff = 3)
     plotDGM(PDs[1])
     plt.show()

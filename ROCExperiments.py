@@ -75,12 +75,16 @@ def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doD
         #Mean-center and normalize sliding window
         XS = XS - np.mean(XS, 1)[:, None]
         XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
+        plt.clf()
+        makePlot(XMax, PDMax)
+        plt.savefig("%s_Stats.png"%filePrefix)
 
         PDs = doRipsFiltration(XS, 1)
         if len(PDs) < 2:
             continue
         if PDs[1].size > 0:
             thisMaxP = np.max(PDs[1][:, 1] - PDs[1][:, 0])
+            print "thisMaxP = ", thisMaxP
             persistences.append(thisMaxP)
             if thisMaxP > maxP:
                 maxP = thisMaxP
@@ -103,16 +107,16 @@ def runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, Bl
     persistences = []
     (XOrig, FrameDims) = loadVideo(filename)
     for i in range(NRandDraws):
-        filePrefix = ""
-        if i == 0: #Save a video and stats for the first random sample
-            filePrefix = "%s_%g_%i"%(filename, Noise, BlurExtent)
+        filePrefix = "%s_%g_%i"%(filename, Noise, BlurExtent)
+        print("filePrefix = %s"%filePrefix)
         print("Random draw %i of %i"%(i, NRandDraws))
         if BlurExtent > 0:
             XSample = simulateCameraShake(XOrig, FrameDims, BlurExtent)
         else:
             XSample = XOrig
         XSample = XSample + Noise*np.random.randn(XOrig.shape[0], XOrig.shape[1])
-        (PDMax, XMax, maxP, maxj, p) = processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix)
+        (PDMax, XMax, maxP, maxj, p) = processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doSaveVideo = True)
+        print("maxP = %g"%maxP)
         persistences = persistences + p
     return np.array(persistences)
 
@@ -130,17 +134,17 @@ if __name__ == '__main__':
     BlockLen = 160
     BlockHop = 80
     win = 20
-    dim = 20
+    dim = 40
     NRandDraws = 200
 
-    #files = {'pendulum':'Videos/pendulum.avi', 'heart':'Videos/heartvariations.mp4', 'butterflies':'Videos/butterflies.mp4'}
-    files = {'pendulum':'Videos/pendulum.avi'}
+    files = {'pullups':'Videos/pullups.avi', 'explosions':'Videos/explosions.mp4', 'heartbeat':'Videos/heartcrop.avi'}
+    #files = {'pendulum':'Videos/pendulum.avi'}
     #files = {'driving':"Videos/drivingscene.mp4"}
     #files = {'explosions':'Videos/explosions.mp4'}
     for name in files:
         filename = files[name]
         for Noise in [0]:#[0.001, 0.1, 0.5, 1]:
-            for BlurExtent in [20, 40, 80]:#[2, 10, 20, 40]:
+            for BlurExtent in [0, 20, 40, 80]:#[2, 10, 20, 40]:
                 if os.path.exists("psTrue%s_%g_%i.mat"%(name, Noise, BlurExtent)):
                     print("Loading precomputed psTrue %s %g %i"%(name, Noise, BlurExtent))
                     psTrue = sio.loadmat("psTrue%s_%g_%i.mat"%(name, Noise, BlurExtent))['psTrue']

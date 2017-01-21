@@ -1,63 +1,196 @@
 from VideoTools import *
 from ROCExperiments import *
-import cv2
+from TDA import *
+import sys
+sys.path.append("GeometricCoverSongs")
+sys.path.append("GeometricCoverSongs/SequenceAlignment")
+from SpectralMethods import getDiffusionMap
 
-def doSlidingWindowVideo(XOrig, dim, Tau, dT, filePrefix, doDerivative = True):
+def getSSM(X):
+    XSqr = np.sum(X**2, 1)
+    D = XSqr[:, None] + XSqr[None, :] - 2*X.dot(X.T)
+    D[D < 0] = 0 #Numerical precision
+    D = np.sqrt(D)
+    return D
+
+def doPlot(X):
+    #Self-similarity matrix
+    D = getSSM(X)
+
+    #PCA
+    pca = PCA(n_components = 3)
+    Y = pca.fit_transform(X)
+    sio.savemat("PCA.mat", {"Y":Y})
+    eigs = pca.explained_variance_
+
+    plt.clf()
+    plt.subplot(221)
+    plt.title("Self-Similarity Image")
+    plt.xlabel("Frame Number")
+    plt.ylabel("Frame Number")
+    plt.imshow(D, cmap='afmhot')
+
+
+    ax = plt.subplot(223)
+    ax.set_title("PCA of Sliding Window Embedding")
+    c = plt.get_cmap('spectral')
+    C = c(np.array(np.round(np.linspace(0, 255, Y.shape[0])), dtype=np.int32))
+    C = C[:, 0:3]
+    ax.scatter(Y[:, 0], Y[:, 1], c = C)
+    ax.set_aspect('equal', 'datalim')
+
+def printMaxPersistences(PD, num):
+    idx = np.argsort(PD[:, 0] - PD[:, 1])
+    P = PD[idx, 1] - PD[idx, 0]
+    N = min(num, len(idx))
+    print P[0:N]
+
+
+def doSlidingWindowVideo(XOrig, dim, Tau, dT, filePrefix, diffusionParams = None, derivWin = -1):
     X = getPCAVideo(XOrig)
+    print X.shape
     print("Finished PCA")
-    if doDerivative:
-        [X, validIdx] = getTimeDerivative(X, 10)
+    if derivWin > 0:
+        [X, validIdx] = getTimeDerivative(X, derivWin)
     XS = getSlidingWindowVideo(X, dim, Tau, dT)
 
     #Mean-center and normalize sliding window
     XS = XS - np.mean(XS, 1)[:, None]
     XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
-    PDs = doRipsFiltration(XS, 1)
 
-    plt.clf()
-    makePlot(XS, PDs[1])
-    plt.savefig("%s_Stats.png"%filePrefix)
-    return PDs[1]
+    #Compute SSM, with optional diffusion
+    D = getSSM(XS)
+    if diffusionParams:
+        print "Doing diffusion..."
+        (Kappa, t) = diffusionParams
+        XS = getDiffusionMap(D, Kappa, t)
+        D = getSSM(XS)
+        print "Finished diffusion"
 
-if __name__ == '__main__2':
-    NFrames = 400
-    A1 = 10
-    T1 = 16
-    A2 = 10
-    T2 = 16*np.pi/3
-    ydim = 100
-    (I, IDims) = make2ShakingCircles(NFrames, T1, T2, A1, A2, ydim = ydim)
-    (PDMax, XMax, maxP, maxj, persistences) = processVideo(I, IDims, -1, 1, 16, 20, "2VibratingCircles")
-    print np.sort(PDMax[:, 1] - PDMax[:, 0])[-2::]
+    print "Getting persistence diagrams, N = %i,..."%D.shape[0]
+    PDs2 = doRipsFiltrationDM(D, 2, coeff=2)
+    PDs3 = doRipsFiltrationDM(D, 2, coeff=3)
+    print "Finish getting persistence diagrams"
 
-if __name__ == '__main__2':
-    (I, IDims) = loadVideoFolder("DoublePendulum")
-    (PDMax, XMax, maxP, maxj, persistences) = processVideo(I, IDims, -1, 1, 20, 80, "DoublePendulum")
-    print np.sort(PDMax[:, 1] - PDMax[:, 0])[-2::]
+    plt.figure(figsize=(10, 9))
+    doPlot(XS)
 
-if __name__ == '__main__2':
-    (I, IDims) = loadVideoFolder("TriplePendulum")
-    (PDMax, XMax, maxP, maxj, persistences) = processVideo(I, IDims, -1, 1, 20, 80, "TriplePendulum")
-    print np.sort(PDMax[:, 1] - PDMax[:, 0])[-2::]
+    plt.subplot(222)
+    H1 = plotDGM(PDs2[1], color = np.array([1.0, 0.0, 0.2]), label = 'H1', sz = 50, axcolor = np.array([0.8]*3))
+    plt.hold(True)
+    H2 = plotDGM(PDs2[2], color = np.array([0.43, 0.67, 0.27]), marker = 'x', sz = 50, label = 'H2', axcolor = np.array([0.8]*3))
+    plt.legend(handles=[H1, H2])
+    plt.title("Persistence Diagrams Z2")
 
-def getHOG(Vid):
-    hog = cv2.HOGDescriptor()
-    H = hog.compute(Vid[0])
-    IRet = np.zeros((len(Vid), len(H)))
-    IRet[0, :] = H.flatten()
-    for i in range(1, len(Vid)):
-        print "Computing HOG %i of %i"%(i, len(Vid))
-        H = hog.compute(Vid[i])
-        IRet[i, :] = H.flatten()
-    return IRet
+    plt.subplot(224)
+    H1 = plotDGM(PDs3[1], color = np.array([1.0, 0.0, 0.2]), label = 'H1', sz = 50, axcolor = np.array([0.8]*3))
+    plt.hold(True)
+    H2 = plotDGM(PDs3[2], color = np.array([0.43, 0.67, 0.27]), marker = 'x', sz = 50, label = 'H2', axcolor = np.array([0.8]*3))
+    plt.legend(handles=[H1, H2])
+    plt.title("Persistence Diagrams Z3")
+    plt.savefig("%s_Stats.svg"%filePrefix, bbox_inches = 'tight')
+
+    return (PDs2[1], PDs3[1], PDs2[2])
+
+def writeVideo(fout, video):
+    fout.write("""
+        <video controls width = 500>
+          <source src="%s" type="video/ogg">
+        Your browser does not support the video tag.
+        </video>
+        """%video)
+
+def getPeriodicityScores(I1Z2, I1Z3, I2):
+    (Z2H1Max1, Z3H1Max1, Z3H1Max2, H2Max1) = (0, 0, 0, 0)
+    idx = np.argsort(I1Z3[:, 0] - I1Z3[:, 1])
+    if len(idx) > 0:
+        Z3H1Max1 = I1Z3[idx[0], 1] - I1Z3[idx[0], 0]
+    if len(idx) > 1:
+        Z3H1Max2 = I1Z3[idx[1], 1] - I1Z3[idx[1], 0]
+    idx = np.argsort(I1Z2[:, 0] - I1Z2[:, 1])
+    if len(idx) > 0:
+        Z2H1Max1 = I1Z2[idx[0], 1] - I1Z2[idx[0], 0]
+    idx = np.argsort(I2[:, 0] - I2[:, 1])
+    if len(idx) > 0:
+        H2Max1 = I2[idx[0], 1] - I2[idx[0], 0]
+    #Periodicity Score
+    PScore = Z3H1Max1/np.sqrt(3)
+    #Harmonic Subscore
+    HSubscore = 1 - Z2H1Max1/Z3H1Max1
+    #Quasiperiodicity Score
+    QPScore = Z3H1Max2*H2Max1/np.sqrt(3)
+    return (PScore, HSubscore, QPScore)
+
+def writePeriodicityScores(fout, PScore, HSubscore, QPScore):
+    fout.write("<table>")
+    fout.write("<tr><td><h2>Periodicity Score</h2></td><td><h2>%.3g</h2></td></tr>"%PScore)
+    fout.write("<tr><td><h2>Harmonic Subscore</h2></td><td><h2>%.3g</h2></td></tr>"%HSubscore)
+    fout.write("<tr><td><h2>Quasiperiodicity Score</h2></td><td><h2>%.3g</h2></td></tr>"%QPScore)
+    fout.write("</table>")
 
 if __name__ == "__main__":
-    (I, IDims) = loadVideo("VocalCordsGradientFull.ogg")
-    I = I[700::, :]
-    dim = 20
-    Tau = 4
-    dT = 0.2
-    PD = doSlidingWindowVideo(I, dim, Tau, dT, "VocalCords", doDerivative = True)
-    idx = np.argsort(-(PD[:, 1] - PD[:, 0]))
-    P = PD[idx, 1] - PD[idx, 0]
-    print P[0:2]
+    gradSigma = 1
+    Videos = []
+    #AP Biphonation Juergen Neubauer
+    Videos.append({'file':'VocalCordsVideos/APBiphonationCrop.mp4', 'name':'APBiphonation', 'startframe':700, 'endframe':1100, 'dim':20, 'Tau':2, 'dT':1, 'derivWin':10, 'diffusionParams':None})
+
+    #Period is about 10 frames
+    Videos.append({'file':'VocalCordsVideos/APBiphonation2.mp4', 'name':'APBiphonation2', 'startframe':0, 'endframe':200, 'dim':40, 'Tau':0.25, 'dT':0.5, 'derivWin':2, 'diffusionParams':None})
+
+    #Period is about 8 frames
+    Videos.append({'file':'VocalCordsVideos/ClinicalAsymmetry.mp4', 'name':'ClinicalAsymmetry', 'startframe':0, 'endframe':200, 'dim':32, 'Tau':0.25, 'dT':0.5, 'derivWin':2, 'diffusionParams':None})
+
+    #MSU Glottis Mucus Biphonation
+    Videos.append({'file':'VocalCordsVideos/LTR_ED_MucusBiphonCrop.avi', 'name':'MucusBiphonation', 'startframe':0, 'endframe':-1, 'dim':36, 'Tau':1, 'dT':0.5, 'derivWin':10, 'diffusionParams':None})
+
+    #MSU Glottis Mucus Periodic Perturbed
+    Videos.append({'file':'VocalCordsVideos/LTR_BO_MucusPertCrop.avi', 'name':'MucusPerturbedPeriodic', 'startframe':0, 'endframe':-1, 'dim':56, 'Tau':0.25, 'dT':0.5, 'derivWin':10, 'diffusionParams':None})
+
+    #MSU Glottis Normal Periodic
+    Videos.append({'file':'VocalCordsVideos/NormalPeriodicCrop.ogg', 'name':'NormalPeriodic', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':0.5, 'dT':1, 'derivWin':10, 'diffusionParams':None})
+
+    foutindex = open("VocalCordsResults/index.html", 'w')
+    foutindex.write("<html><body>")
+    foutindex.write("<table border = 1 cellpadding = 4>")
+    foutindex.write("<tr><td><h2>Video Name</h2></td><td><h2>Periodicity Score</h2></td><td><h2>Harmonic Subscore</h2></td><td><h2>Quasiperiodicity Score</h2></td><td><h2>Persistence Diagrams</h2></td></tr>")
+    for V in Videos:
+        (dim, Tau, dT, name, diffusionParams, derivWin) = (V['dim'], V['Tau'], V['dT'], V['name'], V['diffusionParams'], V['derivWin'])
+        i1 = V['startframe']
+        i2 = V['endframe']
+        (I, IDims) = loadVideo(V['file'])
+        I = I[i1:i2, :]
+        IGrad = getGradientVideo(I, IDims, gradSigma)
+        fout = open("VocalCordsResults/%s.html"%name, 'w')
+        fout.write("<html><body")
+        fout.write("<pre><h2>dim = %i\nTau = %g\ndT=%g\ndiffusionParams=%s</h2></pre>"%(dim, Tau, dT, diffusionParams))
+
+        saveVideo(I, IDims, "VocalCordsResults/%s.ogg"%name)
+        saveVideo(IGrad/np.max(IGrad), IDims, "VocalCordsResults/%sGrad.ogg"%name)
+
+        #Do straight up video
+        (I1Z2, I1Z3, I2) = doSlidingWindowVideo(I, dim, Tau, dT, "VocalCordsResults/%s"%name, diffusionParams, derivWin)
+        fout.write("<BR><BR><h1>%s</h1><BR>"%name)
+        writeVideo(fout, "%s.ogg"%name)
+        (PScore, HSubscore, QPScore) = getPeriodicityScores(I1Z2, I1Z3, I2)
+        fout.write("<BR><h2>Scores</h2><BR>")
+        writePeriodicityScores(fout, PScore, HSubscore, QPScore)
+        fout.write("<BR><img src = %s_Stats.svg>"%name)
+        foutindex.write("<tr><td><a href = %s.html>%s</a></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><img src = %s_Stats.svg width = 200></tr>\n"%(name, name, PScore, HSubscore, QPScore, name))
+
+        fout.write("<BR><BR><HR>")
+
+        #Do gradient video
+        (I1Z2, I1Z3, I2) = doSlidingWindowVideo(IGrad, dim, Tau, dT, "VocalCordsResults/%sGrad"%name, diffusionParams, derivWin)
+        fout.write("<BR><BR><h1><a name = \"Grad\">%s Dirichlet Seminorm</a></h1><BR>"%name)
+        writeVideo(fout, "%sGrad.ogg"%name)
+        (PScore, HSubscore, QPScore) = getPeriodicityScores(I1Z2, I1Z3, I2)
+        fout.write("<BR><h2>Scores</h2><BR>")
+        writePeriodicityScores(fout, PScore, HSubscore, QPScore)
+        fout.write("<BR><img src = %sGrad_Stats.svg>"%name)
+        foutindex.write("<tr><td><a href = %s.html#Grad>%s Dirichlet Seminorm</a></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><img src = %sGrad_Stats.svg width = 200></tr>\n"%(name, name, PScore, HSubscore, QPScore, name))
+
+        fout.write("</body></html>")
+        fout.close()
+
+    foutindex.write("</table></body></html>")
+    foutindex.close()

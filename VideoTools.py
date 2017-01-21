@@ -9,6 +9,7 @@ import subprocess
 import matplotlib.image as mpimage
 import scipy.misc
 import scipy.signal
+from scipy.ndimage import gaussian_gradient_magnitude
 from SyntheticCurves import * #For motion blur
 
 #Need these for saving 3D video
@@ -29,6 +30,16 @@ def rgb2ntsc(F):
 
 def ntsc2rgb(F):
     return F.dot(fromNTSC.T)
+
+def rgb2gray(F, repDims = True):
+    G = np.dot(F[...,:3], [0.299, 0.587, 0.114])
+    if repDims:
+        ret = np.zeros((G.shape[0], G.shape[1], 3))
+        for k in range(3):
+            ret[:, :, k] = G
+        return ret
+    else:
+        return G
 
 #Input: path: Either a filename or a folder
 #Returns: tuple (Video NxP array, dimensions of video)
@@ -390,7 +401,22 @@ def simulateCameraShake(I, IDims, shakeMag):
         J[i, :] = IBlur.flatten()
     return J
 
+def getGradientVideo(I, IDims, sigma = 1):
+    GV = np.zeros(I.shape)
+    for i in range(I.shape[0]):
+        X = np.reshape(I[i, :], IDims)
+        G = rgb2gray(X, False)
+        GM = gaussian_gradient_magnitude(G, sigma)
+        F = np.zeros(IDims)
+        for k in range(F.shape[2]):
+            F[:, :, k] = GM
+        GV[i, :] = F.flatten()
+    return GV
+
 if __name__ == '__main__':
-    (I, IDims) = loadVideo("Videos/pendulum.avi")
-    IBlur = simulateCameraShake(I, IDims, 40)
-    saveVideo(IBlur, IDims, "out.avi")
+    (I, IDims) = loadVideo("VocalCordsVideos/LTR_ED_MucusBiphonCrop.avi")
+    #IBlur = simulateCameraShake(I, IDims, 40)
+    #saveVideo(IBlur, IDims, "PendulumBlur.avi")
+    IGradient = getGradientVideo(I, IDims, sigma=1)
+    IGradient = IGradient/np.max(IGradient)
+    saveVideo(IGradient, IDims, "out.avi")

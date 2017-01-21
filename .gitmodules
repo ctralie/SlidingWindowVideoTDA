@@ -1,3 +1,6 @@
 [submodule "ripser"]
 	path = ripser
 	url = https://github.com/Ripser/ripser.git
+[submodule "GeometricCoverSongs"]
+	path = GeometricCoverSongs
+	url = https://github.com/ctralie/GeometricCoverSongs.git
