@@ -39,13 +39,10 @@ if __name__ == "__main__":
     DsJW = np.zeros((len(Rs), len(Rs)))
     for i in range(len(Rs)):
         r1 = orders[keys[i]]
-        for j in range(i+1, len(Rs)):
+        for j in range(len(Rs)):
             r2 = orders[keys[j]]
             DsKT[i, j] = getKendallTau(r1, r2)
             DsJW[i, j] = getJWDistance(r1, r2)
-    
-    DsKT = DsKT + DsKT.T
-    DsJW = DsJW + DsJW.T
     
     fout.write("<h1>Kendall Tau</h1>")
     fout.write("<table border = \"1\" cellpadding = \"5\">")

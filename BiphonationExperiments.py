@@ -114,11 +114,11 @@ def getPeriodicityScores(I1Z2, I1Z3, I2):
     if len(idx) > 0:
         H2Max1 = I2[idx[0], 1] - I2[idx[0], 0]
     #Periodicity Score
-    PScore = Z3H1Max1/np.sqrt(3)
+    PScore = (Z3H1Max1 - Z3H1Max2)/np.sqrt(3)
     #Harmonic Subscore
     HSubscore = 1 - Z2H1Max1/Z3H1Max1
     #Quasiperiodicity Score
-    QPScore = Z3H1Max2*H2Max1/np.sqrt(3)
+    QPScore = np.sqrt(Z3H1Max2*H2Max1/3.0)
     return (PScore, HSubscore, QPScore)
 
 def writePeriodicityScores(fout, PScore, HSubscore, QPScore):
@@ -132,22 +132,22 @@ if __name__ == "__main__":
     gradSigma = 1
     Videos = []
     #AP Biphonation Juergen Neubauer
-    Videos.append({'file':'VocalCordsVideos/APBiphonationCrop.mp4', 'name':'APBiphonation', 'startframe':700, 'endframe':1100, 'dim':20, 'Tau':2, 'dT':1, 'derivWin':10, 'diffusionParams':None})
+    Videos.append({'file':'VocalCordsVideos/APBiphonationCrop.mp4', 'name':'APBiphonation', 'startframe':700, 'endframe':1100, 'dim':20, 'Tau':2, 'dT':0.5, 'derivWin':10, 'diffusionParams':None})
 
     #Period is about 10 frames
-    Videos.append({'file':'VocalCordsVideos/APBiphonation2.mp4', 'name':'APBiphonation2', 'startframe':0, 'endframe':200, 'dim':40, 'Tau':0.25, 'dT':0.5, 'derivWin':2, 'diffusionParams':None})
+    Videos.append({'file':'VocalCordsVideos/APBiphonation2.mp4', 'name':'APBiphonation2', 'startframe':0, 'endframe':200, 'dim':40, 'Tau':0.25, 'dT':0.25, 'derivWin':2, 'diffusionParams':None})
 
     #Period is about 8 frames
-    Videos.append({'file':'VocalCordsVideos/ClinicalAsymmetry.mp4', 'name':'ClinicalAsymmetry', 'startframe':0, 'endframe':200, 'dim':32, 'Tau':0.25, 'dT':0.5, 'derivWin':2, 'diffusionParams':None})
+    Videos.append({'file':'VocalCordsVideos/ClinicalAsymmetry.mp4', 'name':'ClinicalAsymmetry', 'startframe':0, 'endframe':200, 'dim':32, 'Tau':0.25, 'dT':0.25, 'derivWin':2, 'diffusionParams':None})
 
     #MSU Glottis Mucus Biphonation
-    Videos.append({'file':'VocalCordsVideos/LTR_ED_MucusBiphonCrop.avi', 'name':'MucusBiphonation', 'startframe':0, 'endframe':-1, 'dim':36, 'Tau':1, 'dT':0.5, 'derivWin':10, 'diffusionParams':None})
+    Videos.append({'file':'VocalCordsVideos/LTR_ED_MucusBiphonCrop.avi', 'name':'MucusBiphonation', 'startframe':0, 'endframe':-1, 'dim':36, 'Tau':1, 'dT':0.25, 'derivWin':10, 'diffusionParams':None})
 
     #MSU Glottis Mucus Periodic Perturbed
-    Videos.append({'file':'VocalCordsVideos/LTR_BO_MucusPertCrop.avi', 'name':'MucusPerturbedPeriodic', 'startframe':0, 'endframe':-1, 'dim':56, 'Tau':0.25, 'dT':0.5, 'derivWin':10, 'diffusionParams':None})
+    Videos.append({'file':'VocalCordsVideos/LTR_BO_MucusPertCrop.avi', 'name':'MucusPerturbedPeriodic', 'startframe':0, 'endframe':-1, 'dim':56, 'Tau':0.25, 'dT':0.25, 'derivWin':10, 'diffusionParams':None})
 
     #MSU Glottis Normal Periodic
-    Videos.append({'file':'VocalCordsVideos/NormalPeriodicCrop.ogg', 'name':'NormalPeriodic', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':0.5, 'dT':1, 'derivWin':10, 'diffusionParams':None})
+    Videos.append({'file':'VocalCordsVideos/NormalPeriodicCrop.ogg', 'name':'NormalPeriodic', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':0.5, 'dT':0.5, 'derivWin':10, 'diffusionParams':None})
 
     foutindex = open("VocalCordsResults/index.html", 'w')
     foutindex.write("<html><body>")
