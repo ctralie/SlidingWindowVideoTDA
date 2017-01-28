@@ -9,11 +9,13 @@ if __name__ == "__main__":
     BlockHop = 80
     win = 20
     dim = 20
-    foldername = "KTH/Subject2"
-    NVideos = 24
+    coeff = 2
+    foldername = "VideoMix/NumberedVideos"
+    NVideos = 20
     for i in range(NVideos):
         (XOrig, FrameDims) = loadVideo("%s/%i.ogg"%(foldername, i))
-        (_, _, s, _, _) = processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, "%s/%iResults"%(foldername, i))
+        XOrig = XOrig[0:-30, :] #Cut out number at the end
+        (_, _, s, _, _) = processVideo(XOrig, FrameDims, -1, BlockHop, win, dim, "%s/%iResults"%(foldername, i), coeff = coeff)
         scores.append(s)
     scores = np.array(scores)
 
@@ -31,7 +33,7 @@ if __name__ == "__main__":
     fout.write("</table></body></html>")
     fout.close()
     print idx
-    
+
     R = []
     for i in range(len(idx)):
         for j in range(i+1, len(idx)):
@@ -40,4 +42,4 @@ if __name__ == "__main__":
                 R.append([idx[i], idx[j], 1])
             else:
                 R.append([idx[j], idx[i], -1])
-    sio.savemat("TurkResults/TDARankings.mat", {"R":np.array(R)})
+    sio.savemat("%s/TDARankings.mat"%foldername, {"R":np.array(R)})

@@ -42,7 +42,7 @@ def makePlot(X, PD):
     plt.title("Eigenvalues")
 
 
-def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doDerivative = True, doSaveVideo = True):
+def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doDerivative = True, doSaveVideo = True, coeff = 3):
     print("Doing PCA...")
     X = getPCAVideo(XOrig)
     print("Finished PCA")
@@ -81,7 +81,7 @@ def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doD
         makePlot(XMax, PDMax)
         plt.savefig("%s_Stats.png"%filePrefix)
 
-        PDs = doRipsFiltration(XS, 1)
+        PDs = doRipsFiltration(XS, 1, coeff = coeff)
         if len(PDs) < 2:
             continue
         if PDs[1].size > 0:
