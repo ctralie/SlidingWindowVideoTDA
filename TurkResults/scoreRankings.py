@@ -7,9 +7,10 @@ if __name__ == "__main__":
     RTurk = sio.loadmat("MixRankingsScored.mat")['R']
     RTDAZ2 = sio.loadmat("TDARankingsMixZ2.mat")['R']
     RTDAZ3 = sio.loadmat("TDARankingsMixZ3.mat")['R']
-    RCutlerDavis = sio.loadmat("CutlerDavisRankingsMix.mat")['R']
+    RCutlerDavisFreq = sio.loadmat("CutlerDavisRankingsFreqMix.mat")['R']
+    RCutlerDavisLattice = sio.loadmat("CutlerDavisRankingsLatticeMix.mat")['R']
     
-    Rs = {'RTurk':RTurk, 'RTDAZ2':RTDAZ2, 'RTDAZ3':RTDAZ3, 'RCutlerDavis':RCutlerDavis}
+    Rs = {'RTurk':RTurk, 'RTDAZ2':RTDAZ2, 'RTDAZ3':RTDAZ3, 'RCutlerDavisFreq':RCutlerDavisFreq, 'RCutlerDavisLattice':RCutlerDavisLattice}
     orders = {}
     fout = open("results.html", "w")
     fout.write("<h1>Orders</h1>\n<table>")
@@ -21,7 +22,7 @@ if __name__ == "__main__":
         fout.write("<tr><td>%s</td><td>%s</td></tr>"%(RName, orders[RName]))
     fout.write("</table><BR><BR>")
     
-    keys = ['RTDAZ2', 'RTDAZ3', 'RCutlerDavis', 'RTurk']
+    keys = ['RTDAZ2', 'RTDAZ3', 'RCutlerDavisFreq', 'RCutlerDavisLattice', 'RTurk']
     
     DsKT = np.zeros((len(Rs), len(Rs)))
     DsJW = np.zeros((len(Rs), len(Rs)))

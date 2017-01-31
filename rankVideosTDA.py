@@ -30,8 +30,14 @@ if __name__ == "__main__":
         XOrig = XOrig[0:-30, :] #Cut out number at the end
         (_, _, s, _, _) = processVideo(XOrig, FrameDims, -1, BlockHop, win, dim, "%s/%iResults"%(foldername, i), coeff = coeff)
         scores.append(s)
+        r = getCutlerDavisLatticeScore(XOrig)
+        s = r['score']
         plt.clf()
-        s = getCutlerDavisFrequencyScore(XOrig, doPlot = True)
+        plt.subplot(121)
+        plt.imshow(r['D'], cmap='afmhot', interpolation = 'nearest')
+        plt.title('SSM')
+        plt.subplot(122)
+        checkLattice(r['Q'], r['JJ'], r['II'], r['L'], r['d'], r['offset'], r['CSmooth'], doPlot = True)
         plt.savefig("%s/%i_StatsCD.svg"%(foldername, i), bbox_inches='tight')
         scoresCD.append(s)
     scores = np.array(scores)
@@ -41,7 +47,7 @@ if __name__ == "__main__":
     fout = open("%s/index.html"%foldername, "w")
     fout.write("<html><body><table border = '1'>")
     idx = np.argsort(-scores)
-    idx2 = np.argsort(-scoresCD)
+    idx2 = np.argsort(scoresCD)
     count = 1
     for i in idx:
         fout.write("<tr><td><h2>%i</h2>%i.ogg<BR><BR>Maximum Persistence = <BR><b>%g</b><BR><BR>Kurtosis = <BR><b>%g</b></td>"%(count, i, scores[i], scoresCD[i]))

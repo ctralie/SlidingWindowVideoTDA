@@ -87,7 +87,6 @@ def checkLattice(Q, JJ, II, L, d, offset, CSmooth, doPlot = False):
 
     if doPlot:
         plt.imshow(CSmooth, cmap='afmhot', interpolation = 'nearest')
-        plt.colorbar()
         plt.hold(True)
         #Draw peaks
         plt.scatter(JJ + offset, II + offset, 20, 'r')
@@ -206,14 +205,14 @@ if __name__ == '__main__':
     plt.figure(figsize=(12, 6))
     N = 20
     NPeriods = 10
-    t = np.linspace(-1, 1, N)#**3
+    t = np.linspace(-1, 1, N+1)[0:N]**3
     t = 0.5*t/max(np.abs(t)) + 0.5
     t = 2*np.pi*t
     #t = np.linspace(0, 5*2*np.pi, N)
     X = np.zeros((N*NPeriods, 2))
     for i in range(NPeriods):
         X[i*N:(i+1)*N, 0] = np.cos(t)
-        #X[i*N:(i+1)*N, 1] = np.sin(t)
+        X[i*N:(i+1)*N, 1] = np.sin(t)
     X = X + 0.2*np.random.randn(N*NPeriods, 2)
     #X = np.random.randn(N*NPeriods, 2)
     r = getCutlerDavisLatticeScore(X)
@@ -221,7 +220,7 @@ if __name__ == '__main__':
     #Plot results
     plt.figure(figsize=(18, 4))
     plt.subplot(131)
-    plt.plot(X[:, 0])
+    plt.scatter(X[:, 0], X[:, 1], 20)
     plt.title('Time Series')
     plt.subplot(132)
     plt.imshow(r['D'], cmap='afmhot', interpolation = 'nearest')
