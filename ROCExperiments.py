@@ -23,7 +23,8 @@ def makePlot(X, PD):
 
     plt.clf()
     plt.subplot(221)
-    plt.imshow(D)
+    plt.imshow(D, cmap = 'afmhot', interpolation = 'nearest')
+    plt.title('SSM')
 
     plt.subplot(222)
     plotDGM(PD)
@@ -31,10 +32,13 @@ def makePlot(X, PD):
 
     ax = plt.subplot(223)
     ax.set_title("PCA of Sliding Window Embedding")
-    c = plt.get_cmap('jet')
+    c = plt.get_cmap('Spectral')
     C = c(np.array(np.round(np.linspace(0, 255, Y.shape[0])), dtype=np.int32))
     C = C[:, 0:3]
-    ax.scatter(Y[:, 0], Y[:, 1], c = C)
+    ax.scatter(Y[:, 0], Y[:, 1], c = C, edgecolor='none')
+    ax.set_axis_bgcolor((0.15, 0.15, 0.15))
+    ax.get_xaxis().set_ticks([])
+    ax.get_yaxis().set_ticks([])
     ax.set_aspect('equal', 'datalim')
 
     plt.subplot(224)
@@ -79,7 +83,7 @@ def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doD
         XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
         plt.clf()
         makePlot(XMax, PDMax)
-        plt.savefig("%s_Stats.png"%filePrefix)
+        plt.savefig("%s_Stats.svg"%filePrefix)
 
         PDs = doRipsFiltration(XS, 1, coeff = coeff)
         if len(PDs) < 2:
@@ -99,7 +103,7 @@ def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doD
         print("Saving first block")
         plt.clf()
         makePlot(XMax, PDMax)
-        plt.savefig("%s_Stats.png"%filePrefix)
+        plt.savefig("%s_Stats.svg"%filePrefix, bbox_inches='tight')
         if doSaveVideo:
             saveVideo(XOrig[idxs[maxj], :], FrameDims, "%s_max.ogg"%filePrefix)
     return (PDMax, XMax, maxP, maxj, persistences)

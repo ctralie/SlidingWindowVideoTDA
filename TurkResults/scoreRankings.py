@@ -4,12 +4,12 @@ sys.path.append("..")
 from Hodge import *
 
 if __name__ == "__main__":
-    R21 = sio.loadmat("Subject2Rankings1.mat")['R']
-    R22 = sio.loadmat("Subject2Rankings2.mat")['R']
-    RMy = sio.loadmat("MyRankings.mat")['R']
-    RTDA = sio.loadmat("TDARankings.mat")['R']
+    RTurk = sio.loadmat("MixRankingsScored.mat")['R']
+    RTDAZ2 = sio.loadmat("TDARankingsMixZ2.mat")['R']
+    RTDAZ3 = sio.loadmat("TDARankingsMixZ3.mat")['R']
+    RCutlerDavis = sio.loadmat("CutlerDavisRankingsMix.mat")['R']
     
-    Rs = {'R21':R21, 'R22':R22, 'RMy':RMy, 'RTDA':RTDA}
+    Rs = {'RTurk':RTurk, 'RTDAZ2':RTDAZ2, 'RTDAZ3':RTDAZ3, 'RCutlerDavis':RCutlerDavis}
     orders = {}
     fout = open("results.html", "w")
     fout.write("<h1>Orders</h1>\n<table>")
@@ -19,21 +19,9 @@ if __name__ == "__main__":
         (s, I, H) = doHodge(R[:, 0:2], np.ones(N), R[:, 2].flatten(), verbose = True)
         orders[RName] = np.argsort(s)   
         fout.write("<tr><td>%s</td><td>%s</td></tr>"%(RName, orders[RName]))
-        if RName == 'RTDA':
-            orders['RTDAReverse'] = np.argsort(-s)  
-            fout.write("<tr><td>%s</td><td>%s</td></tr>"%('RTDAReverse', orders['RTDAReverse']))
     fout.write("</table><BR><BR>")
-    Rs['RTDAReverse'] = RTDA   
     
-    #Flip first and last in RTDA to check stability
-    #r = orders['RTDA']
-    #f = r[0]
-    #l = r[-1]
-    #r[0] = l
-    #r[-1] = f
-    #orders['RTDA'] = r
-    
-    keys = ['RTDA', 'RTDAReverse', 'RMy', 'R21', 'R22']
+    keys = ['RTDAZ2', 'RTDAZ3', 'RCutlerDavis', 'RTurk']
     
     DsKT = np.zeros((len(Rs), len(Rs)))
     DsJW = np.zeros((len(Rs), len(Rs)))

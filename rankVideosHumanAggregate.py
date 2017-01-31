@@ -4,8 +4,8 @@ import scipy.io as sio
 from Hodge import *
 
 if __name__ == "__main__":
-    foldername = "KTH/Subject2"
-    X = sio.loadmat("Subject2Rankings.mat")
+    foldername = "VideoMix/NumberedVideos"
+    X = sio.loadmat("TurkResults/MixRankingsScored.mat")
     R = X['R']
     Y = R[:, 2]
     R = R[:, 0:2]
