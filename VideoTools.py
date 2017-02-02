@@ -401,6 +401,84 @@ def simulateCameraShake(I, IDims, shakeMag):
         J[i, :] = IBlur.flatten()
     return J
 
+
+def simulateByteErrors(I, IDims, fracbyte, doPlot = False):
+    """
+    Create a version of the video which would occur from bit errors
+    :param I: NFrames x NPixels video array
+    :param IDims: Tuple of the dimensions of the pixels
+    :param fracbyte: The fraction of the bytes that are randomly changed
+    """
+    TEMPAVI = "temp.avi"
+    LFAC = 400 #How many bytes to corrupt in a row
+    FLIPPROB = 0.5
+    FrameRate = 30
+    N = I.shape[0]
+    #Step 1: Output video as temporary files and convert to AVI
+    for i in range(N):
+        frame = np.reshape(I[i, :], IDims)
+        mpimage.imsave("%s%i.png"%(TEMP_STR, i+1), frame)
+    #Convert to video using avconv
+    if os.path.exists(TEMPAVI):
+        os.remove(TEMPAVI)
+    command = [AVCONV_BIN,
+                '-r', "%i"%FrameRate,
+                '-i', TEMP_STR + '%d.png',
+                '-r', "%i"%FrameRate,
+                '-b', '30000k',
+                TEMPAVI]
+    subprocess.call(command)
+
+    #Step 2: Read in AVI file as a binary file and corrupt it
+    fin = open(TEMPAVI, "rb")
+    b = fin.read()
+    fin.close()
+    #Cleanup leftover files
+    for i in range(N):
+       os.remove("%s%i.png"%(TEMP_STR, i+1))
+    os.remove(TEMPAVI)
+    b = bytearray(b)
+    i = 15000 #Make sure the header is skipped
+    lam = LFAC/fracbyte
+    ilocs = []
+    while i < len(b):
+        i += int(np.random.exponential(lam))
+        ilocs.append(i)
+    NumFlipped = 0
+    for i in ilocs:
+        for k in range(i, min(i+LFAC, len(b))):
+            if np.random.rand() < FLIPPROB:
+                b[k] = np.random.randint(255)
+                NumFlipped += 1
+    if doPlot:
+        #For debugging
+        plt.stem(np.array(ilocs), np.ones(len(ilocs)))
+        plt.title("fracbyte = %g, %g flipped"%(fracbyte, float(NumFlipped)/len(b)))
+        plt.show()
+    fout = open(TEMPAVI, "wb")
+    fout.write(b)
+    fout.close()
+
+    #Step 3: Use avconv to extract the corrupted frames
+    command = [AVCONV_BIN,
+                '-i', TEMPAVI,
+                '-f', 'image2',
+                 TEMP_STR + '%d.png']
+    subprocess.call(command)
+    os.remove(TEMPAVI)
+    i = 1
+    frames = []
+    IDimsRet = IDims
+    while os.path.exists("%s%d.png"%(TEMP_STR, i)):
+        filename = "%s%d.png"%(TEMP_STR, i)
+        F = scipy.misc.imread(filename)
+        IDimsRet = F.shape
+        #os.remove(filename)
+        frames.append(F.flatten())
+        i += 1
+    ret = np.array(frames)/255.0
+    return (ret, IDimsRet)
+
 def getGradientVideo(I, IDims, sigma = 1):
     GV = np.zeros(I.shape)
     for i in range(I.shape[0]):
@@ -413,10 +491,20 @@ def getGradientVideo(I, IDims, sigma = 1):
         GV[i, :] = F.flatten()
     return GV
 
-if __name__ == '__main__':
+if __name__ == '__main__2':
     (I, IDims) = loadVideo("VocalCordsVideos/LTR_ED_MucusBiphonCrop.avi")
     #IBlur = simulateCameraShake(I, IDims, 40)
     #saveVideo(IBlur, IDims, "PendulumBlur.avi")
     IGradient = getGradientVideo(I, IDims, sigma=1)
     IGradient = IGradient/np.max(IGradient)
     saveVideo(IGradient, IDims, "out.avi")
+
+if __name__ == '__main__2':
+    (I, IDims) = loadVideo("Videos/heartcrop.avi")
+    for lam in [0.01, 0.05, 0.1, 0.2, 0.5]:
+        (IRet, IDimsRet) = simulateByteErrors(I, IDims, lam)
+        saveVideo(IRet, IDimsRet, "VideoCorrupted%.2g.ogg"%lam)
+
+if __name__ == '__main__':
+    (I, IDims) = make2ShakingCircles(400, T1 = 10, T2 = 10*np.pi/3, A1 = 20, A2 = 20, ydim = 160)
+    saveVideo(I, IDims, "QuasiperiodicCircles.ogg")

@@ -22,14 +22,13 @@ if __name__ == "__main__":
     BlockHop = 80
     win = 20
     dim = 20
-    coeff = 2
     foldername = "VideoMix/NumberedVideos"
     NVideos = 20
     for i in range(NVideos):
         (XOrig, FrameDims) = loadVideo("%s/%i.ogg"%(foldername, i))
         XOrig = XOrig[0:-30, :] #Cut out number at the end
-        (_, _, s, _, _) = processVideo(XOrig, FrameDims, -1, BlockHop, win, dim, "%s/%iResults"%(foldername, i), coeff = coeff)
-        scores.append(s)
+        (PScores, QPScores) = processVideo(XOrig, FrameDims, -1, BlockHop, win, dim, "%s/%iResults"%(foldername, i))
+        scores.append(PScores[0])
         r = getCutlerDavisLatticeScore(XOrig)
         s = r['score']
         plt.clf()

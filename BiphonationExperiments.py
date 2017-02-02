@@ -79,14 +79,14 @@ def doSlidingWindowVideo(XOrig, dim, Tau, dT, filePrefix, diffusionParams = None
     H1 = plotDGM(PDs2[1], color = np.array([1.0, 0.0, 0.2]), label = 'H1', sz = 50, axcolor = np.array([0.8]*3))
     plt.hold(True)
     H2 = plotDGM(PDs2[2], color = np.array([0.43, 0.67, 0.27]), marker = 'x', sz = 50, label = 'H2', axcolor = np.array([0.8]*3))
-    plt.legend(handles=[H1, H2])
+    #plt.legend(handles=[H1, H2])
     plt.title("Persistence Diagrams Z2")
 
     plt.subplot(224)
     H1 = plotDGM(PDs3[1], color = np.array([1.0, 0.0, 0.2]), label = 'H1', sz = 50, axcolor = np.array([0.8]*3))
     plt.hold(True)
     H2 = plotDGM(PDs3[2], color = np.array([0.43, 0.67, 0.27]), marker = 'x', sz = 50, label = 'H2', axcolor = np.array([0.8]*3))
-    plt.legend(handles=[H1, H2])
+    #plt.legend(handles=[H1, H2])
     plt.title("Persistence Diagrams Z3")
     plt.savefig("%s_Stats.svg"%filePrefix, bbox_inches = 'tight')
 
@@ -99,27 +99,6 @@ def writeVideo(fout, video):
         Your browser does not support the video tag.
         </video>
         """%video)
-
-def getPeriodicityScores(I1Z2, I1Z3, I2):
-    (Z2H1Max1, Z3H1Max1, Z3H1Max2, H2Max1) = (0, 0, 0, 0)
-    idx = np.argsort(I1Z3[:, 0] - I1Z3[:, 1])
-    if len(idx) > 0:
-        Z3H1Max1 = I1Z3[idx[0], 1] - I1Z3[idx[0], 0]
-    if len(idx) > 1:
-        Z3H1Max2 = I1Z3[idx[1], 1] - I1Z3[idx[1], 0]
-    idx = np.argsort(I1Z2[:, 0] - I1Z2[:, 1])
-    if len(idx) > 0:
-        Z2H1Max1 = I1Z2[idx[0], 1] - I1Z2[idx[0], 0]
-    idx = np.argsort(I2[:, 0] - I2[:, 1])
-    if len(idx) > 0:
-        H2Max1 = I2[idx[0], 1] - I2[idx[0], 0]
-    #Periodicity Score
-    PScore = (Z3H1Max1 - Z3H1Max2)/np.sqrt(3)
-    #Harmonic Subscore
-    HSubscore = 1 - Z2H1Max1/Z3H1Max1
-    #Quasiperiodicity Score
-    QPScore = np.sqrt(Z3H1Max2*H2Max1/3.0)
-    return (PScore, HSubscore, QPScore)
 
 def writePeriodicityScores(fout, PScore, HSubscore, QPScore):
     fout.write("<table>")
@@ -148,6 +127,11 @@ if __name__ == "__main__":
 
     #MSU Glottis Normal Periodic
     Videos.append({'file':'VocalCordsVideos/NormalPeriodicCrop.ogg', 'name':'NormalPeriodic', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':0.5, 'dT':0.5, 'derivWin':10, 'diffusionParams':None})
+
+    #Videos = []
+    #Videos.append({'file':'RayleighBenard/g21r4000.mpeg', 'name':'RayleighBenardConvection', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':0.25, 'dT':1, 'derivWin':10, 'diffusionParams':None})
+
+    #Videos.append({'file':'RayleighBenard/Quasiperiodic.mp4', 'name':'RayleighBenardQuasiperiodic', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':2, 'dT':2, 'derivWin':10, 'diffusionParams':None})
 
     foutindex = open("VocalCordsResults/index.html", 'w')
     foutindex.write("<html><body>")

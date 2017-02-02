@@ -6,7 +6,31 @@ import scipy.io as sio
 import os
 
 
-def makePlot(X, PD):
+def getPeriodicityScores(I1Z2, I1Z3, I2):
+    (Z2H1Max1, Z2H1Max2, Z3H1Max1, Z3H1Max2, H2Max1) = (0, 0, 0, 0, 0)
+    idx = np.argsort(I1Z3[:, 0] - I1Z3[:, 1])
+    if len(idx) > 0:
+        Z3H1Max1 = I1Z3[idx[0], 1] - I1Z3[idx[0], 0]
+    if len(idx) > 1:
+        Z3H1Max2 = I1Z3[idx[1], 1] - I1Z3[idx[1], 0]
+    idx = np.argsort(I1Z2[:, 0] - I1Z2[:, 1])
+    if len(idx) > 0:
+        Z2H1Max1 = I1Z2[idx[0], 1] - I1Z2[idx[0], 0]
+    if len(idx) > 1:
+        Z2H1Max2 = I1Z2[idx[1], 1] - I1Z2[idx[0], 0]
+    idx = np.argsort(I2[:, 0] - I2[:, 1])
+    if len(idx) > 0:
+        H2Max1 = I2[idx[0], 1] - I2[idx[0], 0]
+    #Periodicity Score
+    PScore = (Z3H1Max1 - Z3H1Max2)/np.sqrt(3)
+    PScore = max((Z2H1Max1 - Z2H1Max2)/np.sqrt(3), PScore)
+    #Harmonic Subscore
+    HSubscore = 1 - Z2H1Max1/Z3H1Max1
+    #Quasiperiodicity Score
+    QPScore = np.sqrt(Z3H1Max2*H2Max1/3.0)
+    return (PScore, HSubscore, QPScore)
+
+def makePlot(X, I1Z2, I1Z3, I2):
     if X.size == 0:
         return
     #Self-similarity matrix
@@ -14,6 +38,7 @@ def makePlot(X, PD):
     D = XSqr[:, None] + XSqr[None, :] - 2*X.dot(X.T)
     D[D < 0] = 0
     D = np.sqrt(D)
+    (PScore, HSubscore, QPScore) = getPeriodicityScores(I1Z2, I1Z3, I2)
 
     #PCA
     pca = PCA(n_components = 20)
@@ -27,8 +52,10 @@ def makePlot(X, PD):
     plt.title('SSM')
 
     plt.subplot(222)
-    plotDGM(PD)
-    plt.title("Max = %g"%np.max(PD[:, 1] - PD[:, 0]))
+    H1 = plotDGM(I1Z3, color = np.array([1.0, 0.0, 0.2]), label = 'H1', sz = 50, axcolor = np.array([0.8]*3))
+    plt.hold(True)
+    H2 = plotDGM(I2, color = np.array([0.43, 0.67, 0.27]), marker = 'x', sz = 50, label = 'H2', axcolor = np.array([0.8]*3))
+    plt.title("PScore = %g, QPScore = %g"%(PScore, QPScore))
 
     ax = plt.subplot(223)
     ax.set_title("PCA of Sliding Window Embedding")
@@ -46,16 +73,17 @@ def makePlot(X, PD):
     plt.title("Eigenvalues")
 
 
-def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doDerivative = True, doSaveVideo = True, coeff = 3):
+def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doDerivative = True, doSaveVideo = True):
     print("Doing PCA...")
     X = getPCAVideo(XOrig)
     print("Finished PCA")
     if doDerivative:
         [X, validIdx] = getTimeDerivative(X, 10)
-
     #Setup video blocks
     idxs = []
     N = X.shape[0]
+    if BlockLen > N:
+        BlockLen = -1
     if BlockLen == -1:
         idxs = [np.arange(N)]
     else:
@@ -66,11 +94,8 @@ def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doD
             thisidxs = thisidxs[thisidxs < N]
             idxs.append(thisidxs)
 
-    PDMax = []
-    XMax = np.array([])
-    maxP = 0
-    maxj = 0
-    persistences = []
+    PScores = []
+    QPScores = []
     for j in range(len(idxs)):
         print("Block %i of %i"%(j, len(idxs)))
         idx = idxs[j]
@@ -81,50 +106,58 @@ def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doD
         #Mean-center and normalize sliding window
         XS = XS - np.mean(XS, 1)[:, None]
         XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
-        plt.clf()
-        makePlot(XMax, PDMax)
-        plt.savefig("%s_Stats.svg"%filePrefix)
 
-        PDs = doRipsFiltration(XS, 1, coeff = coeff)
-        if len(PDs) < 2:
-            continue
-        if PDs[1].size > 0:
-            thisMaxP = np.max(PDs[1][:, 1] - PDs[1][:, 0])
-            print "thisMaxP = ", thisMaxP
-            persistences.append(thisMaxP)
-            if thisMaxP > maxP:
-                maxP = thisMaxP
-                PDMax = PDs[1]
-                XMax = XS
-                maxj = j
-    if len(filePrefix) > 0 and len(XMax) > 0:
-        #Save an example persistence diagram for the max block
-        #from the first draw
-        print("Saving first block")
-        plt.clf()
-        makePlot(XMax, PDMax)
-        plt.savefig("%s_Stats.svg"%filePrefix, bbox_inches='tight')
-        if doSaveVideo:
-            saveVideo(XOrig[idxs[maxj], :], FrameDims, "%s_max.ogg"%filePrefix)
-    return (PDMax, XMax, maxP, maxj, persistences)
+        [I1Z2, I1Z3, I2] = [np.array([[0, 0]]), np.array([[0, 0]]), np.array([[0, 0]])]
+        PDs2 = doRipsFiltration(XS, 2, coeff=2)
+        PDs3 = doRipsFiltration(XS, 1, coeff=3)
+        if len(PDs2) > 1:
+            I1Z2 = PDs2[1]
+        if len(PDs3) > 1:
+            I1Z3 = PDs3[1]
+        if len(PDs2) > 2:
+            I2 = PDs2[2]
+        (PScore, HSubscore, QPScore) = getPeriodicityScores(I1Z2, I1Z3, I2)
+        PScores += [PScore]
+        QPScores += [QPScore]
 
-def runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent):
+        if j == 0 and len(filePrefix) > 0:
+            #Save an example persistence diagram for a block in the first draw
+            plt.clf()
+            makePlot(XS, I1Z2, I1Z3, I2)
+            plt.savefig("%s_Stats.svg"%filePrefix, bbox_inches='tight')
+            if doSaveVideo:
+                saveVideo(XOrig[idxs[0], :], FrameDims, "%s.ogg"%filePrefix)
+    return (PScores, QPScores)
+
+def runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent, ByteErrorFrac):
     print("PROCESSING ", filename, "....")
-    persistences = []
+    PScores = []
+    QPScores = []
     (XOrig, FrameDims) = loadVideo(filename)
-    for i in range(NRandDraws):
-        filePrefix = "%s_%g_%i"%(filename, Noise, BlurExtent)
-        print("filePrefix = %s"%filePrefix)
-        print("Random draw %i of %i"%(i, NRandDraws))
+    N = XOrig.shape[0]
+    BlockLen = min(BlockLen, N)
+    NBlocks = int(np.ceil(1 + (N - BlockLen)/BlockHop))
+    ActualRandDraws = int(np.ceil(float(NRandDraws)/NBlocks))
+    print "ActualRandDraws = ", ActualRandDraws
+    for i in range(ActualRandDraws):
+        doSaveVideo = False
+        if i == 0:
+            doSaveVideo = True
+        XSample = np.array(XOrig)
+        ThisFrameDims = FrameDims
+        filePrefix = ""
+        if i == 0:
+            filePrefix = "%s_%g_%i_%g"%(filename, Noise, BlurExtent, ByteErrorFrac)
+        print("Random draw %i of %i"%(i, ActualRandDraws))
+        if ByteErrorFrac > 0:
+            (XSample, ThisFrameDims) = simulateByteErrors(XSample, ThisFrameDims, ByteErrorFrac)
         if BlurExtent > 0:
-            XSample = simulateCameraShake(XOrig, FrameDims, BlurExtent)
-        else:
-            XSample = XOrig
-        XSample = XSample + Noise*np.random.randn(XOrig.shape[0], XOrig.shape[1])
-        (PDMax, XMax, maxP, maxj, p) = processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doSaveVideo = True)
-        print("maxP = %g"%maxP)
-        persistences = persistences + p
-    return np.array(persistences)
+            XSample = simulateCameraShake(XSample, ThisFrameDims, BlurExtent)
+        XSample = XSample + Noise*np.random.randn(XSample.shape[0], XSample.shape[1])
+        (p, qp) = processVideo(XSample, ThisFrameDims, BlockLen, BlockHop, win, dim, filePrefix, doSaveVideo)
+        PScores += p
+        QPScores += qp
+    return (np.array(PScores), np.array(QPScores))
 
 def getROC(T, F):
     values = np.sort(np.array(T.flatten().tolist() + F.flatten().tolist()))
@@ -136,48 +169,49 @@ def getROC(T, F):
         TP[i] = np.sum(T >= values[i])/float(T.size)
     return (FP, TP)
 
-if __name__ == '__main__':
-    BlockLen = 160
-    BlockHop = 80
-    win = 20
-    dim = 40
-    NRandDraws = 200
+def plotROC(psTrue, psFalse, filename):
+    #Plot ROC curve
+    (FP, TP) = getROC(psTrue, psFalse)
 
-    files = {'pullups':'Videos/pullups.avi', 'explosions':'Videos/explosions.mp4', 'heartbeat':'Videos/heartcrop.avi'}
-    #files = {'pendulum':'Videos/pendulum.avi'}
-    #files = {'driving':"Videos/drivingscene.mp4"}
-    #files = {'explosions':'Videos/explosions.mp4'}
+    plt.subplot(121)
+    plt.plot(FP, TP, 'b')
+    plt.hold(True)
+    plt.plot(np.linspace(0, 1, 100), np.linspace(0, 1, 100), 'r')
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("ROC Curve")
+
+    #Plot histogram
+    plt.subplot(122)
+    plt.hold(True)
+    plt.hist(psTrue.flatten(), 10, facecolor='blue')
+    plt.hist(psFalse.flatten(), 10, facecolor='red')
+    plt.savefig("Hists_ROC%s.svg"%filename, bbox_inches='tight')
+
+if __name__ == '__main__':
+    BlockLen = 300
+    BlockHop = 10
+    win = 30
+    dim = 40
+    NRandDraws = 1000
+
+    files = {'quasiperiodic':'Videos/QuasiperiodicCircles.ogg', 'pendulum':'Videos/pendulum.avi', 'explosions':'Videos/explosions.mp4', 'heartbeat':'Videos/heartcrop.avi', 'driving':"Videos/drivingscene.mp4", 'explosions':'Videos/explosions.mp4'}
+
+    params = [{'Noise':0, 'BlurExtent':0, 'ByteError':0}]
+    for Noise in [0.5, 1, 2]:
+        params.append({'Noise':Noise, 'BlurExtent':0, 'ByteError':0})
+    for BlurExtent in [20, 40, 80]:
+        params.append({'Noise':0, 'BlurExtent':BlurExtent, 'ByteError':0})
+    for ByteError in [0.1, 0.3, 0.6]:
+        params.append({'Noise':0, 'BlurExtent':0, 'ByteError':ByteError})
+
     for name in files:
         filename = files[name]
-        for Noise in [0]:#[0.001, 0.1, 0.5, 1]:
-            for BlurExtent in [0, 20, 40, 80]:#[2, 10, 20, 40]:
-                if os.path.exists("psTrue%s_%g_%i.mat"%(name, Noise, BlurExtent)):
-                    print("Loading precomputed psTrue %s %g %i"%(name, Noise, BlurExtent))
-                    psTrue = sio.loadmat("psTrue%s_%g_%i.mat"%(name, Noise, BlurExtent))['psTrue']
-                else:
-                    psTrue = runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent)
-                    sio.savemat("psTrue%s_%g_%i.mat"%(name, Noise, BlurExtent), {"psTrue":psTrue})
-
-                if os.path.exists("psFalse_%g_%i.mat"%(Noise, BlurExtent)):
-                    psFalse = sio.loadmat("psFalse_%g_%i.mat"%(Noise, BlurExtent))['psFalse']
-                else:
-                    psFalse = runExperiments("Videos/drivingscene.ogg", BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent)
-                    sio.savemat("psFalse_%g_%i.mat"%(Noise, BlurExtent), {"psFalse":psFalse})
-
-                #Plot ROC curve
-                (FP, TP) = getROC(psTrue, psFalse)
-                plt.clf()
-                plt.plot(FP, TP, 'b')
-                plt.hold(True)
-                plt.plot(np.linspace(0, 1, 100), np.linspace(0, 1, 100), 'r')
-                plt.xlabel("False Positive Rate")
-                plt.ylabel("True Positive Rate")
-                plt.title("ROC Curve")
-                plt.savefig("ROC_%s_%g_%i.svg"%(name, Noise, BlurExtent), bbox_inches='tight')
-
-                #Plot histogram
-                plt.clf()
-                plt.hold(True)
-                plt.hist(psTrue.flatten(), 10, facecolor='blue')
-                plt.hist(psFalse.flatten(), 10, facecolor='red')
-                plt.savefig("Hists_%s_%g_%i.svg"%(name, Noise, BlurExtent), bbox_inches='tight')
+        for param in params:
+            [Noise, BlurExtent, ByteError] = [param['Noise'], param['BlurExtent'], param['ByteError']]
+            foutname = "Scores_%s_%g_%i_%g.mat"%(name, Noise, BlurExtent, ByteError)
+            if not os.path.exists(foutname):
+                (PScores, QPScores) = runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent, ByteError)
+                sio.savemat(foutname, {"PScores":PScores, "QPScores":QPScores})
+            else:
+                print "Already computed %s, skipping..."%foutname
