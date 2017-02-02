@@ -193,7 +193,7 @@ if __name__ == '__main__':
     BlockHop = 10
     win = 30
     dim = 40
-    NRandDraws = 1000
+    NRandDraws = 100
 
     files = {'quasiperiodic':'Videos/QuasiperiodicCircles.ogg', 'pendulum':'Videos/pendulum.avi', 'explosions':'Videos/explosions.mp4', 'heartbeat':'Videos/heartcrop.avi', 'driving':"Videos/drivingscene.mp4", 'explosions':'Videos/explosions.mp4'}
 
