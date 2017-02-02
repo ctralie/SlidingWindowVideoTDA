@@ -25,7 +25,11 @@ def getPeriodicityScores(I1Z2, I1Z3, I2):
     PScore = (Z3H1Max1 - Z3H1Max2)/np.sqrt(3)
     PScore = max((Z2H1Max1 - Z2H1Max2)/np.sqrt(3), PScore)
     #Harmonic Subscore
-    HSubscore = 1 - Z2H1Max1/Z3H1Max1
+    HSubscore = 0
+    if Z3H1Max1 > 0:
+        1 - Z2H1Max1/Z3H1Max1
+    elif Z2H1Max1 > 0:
+        HSubscore = 1
     #Quasiperiodicity Score
     QPScore = np.sqrt(Z3H1Max2*H2Max1/3.0)
     return (PScore, HSubscore, QPScore)
@@ -112,10 +116,16 @@ def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doD
         PDs3 = doRipsFiltration(XS, 1, coeff=3)
         if len(PDs2) > 1:
             I1Z2 = PDs2[1]
+            if I1Z2.size == 0:
+                I1Z2 = np.array([[0, 0]])
         if len(PDs3) > 1:
             I1Z3 = PDs3[1]
+            if I1Z3.size == 0:
+                I1Z3 = np.array([[0, 0]])
         if len(PDs2) > 2:
             I2 = PDs2[2]
+            if I2.size == 0:
+                I2 = np.array([[0, 0]])
         (PScore, HSubscore, QPScore) = getPeriodicityScores(I1Z2, I1Z3, I2)
         PScores += [PScore]
         QPScores += [QPScore]
