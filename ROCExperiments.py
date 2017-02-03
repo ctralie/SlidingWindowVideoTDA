@@ -161,6 +161,12 @@ def runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, Bl
         print("Doing random draw %i of %i"%(len(PScores), NRandDraws))
         if ByteErrorFrac > 0:
             (XSample, ThisFrameDims) = simulateByteErrors(XSample, ThisFrameDims, ByteErrorFrac)
+            #If the bit errors messed up the video so much that there are none or
+            #hardly any frames, then skip this draw
+            if XSample.size == 0:
+                continue
+            if XSample.shape[0] < 10:
+                continue
         if BlurExtent > 0:
             XSample = simulateCameraShake(XSample, ThisFrameDims, BlurExtent)
         XSample = XSample + Noise*np.random.randn(XSample.shape[0], XSample.shape[1])
