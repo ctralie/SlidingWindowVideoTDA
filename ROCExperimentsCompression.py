@@ -14,6 +14,8 @@ def runExperiments(foldername, packetLoss, NDraws, BlockLen, BlockHop, win, dim,
     for i in range(NDraws):
         print("%i of %i"%(i, NDraws))
         filename = "%s/%i_%i.avi"%(foldername, packetLoss, i)
+        if not os.path.exists(filename):
+            continue
         (XOrig, FrameDims) = loadVideo(filename)
         thisfilePrefix = filePrefix
         if i > 0:

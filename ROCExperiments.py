@@ -77,9 +77,9 @@ def makePlot(X, I1Z2, I1Z3, I2):
     plt.title("Eigenvalues")
 
 
-def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doDerivative = True, doSaveVideo = True):
+def processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doDerivative = True, doSaveVideo = True):
     print("Doing PCA...")
-    X = getPCAVideo(XOrig)
+    X = getPCAVideo(XSample)
     print("Finished PCA")
     if doDerivative:
         [X, validIdx] = getTimeDerivative(X, 10)
@@ -136,20 +136,20 @@ def processVideo(XOrig, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doD
             makePlot(XS, I1Z2, I1Z3, I2)
             plt.savefig("%s_Stats.svg"%filePrefix, bbox_inches='tight')
             if doSaveVideo:
-                saveVideo(XOrig[idxs[0], :], FrameDims, "%s.ogg"%filePrefix)
+                saveVideo(XSample[idxs[0], :], FrameDims, "%s.ogg"%filePrefix)
     return (PScores, QPScores)
 
 def runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent, ByteErrorFrac):
     print("PROCESSING ", filename, "....")
+    cleanupTempFiles()
+    (XOrig, FrameDims) = loadVideo(filename)
     PScores = []
     QPScores = []
-    (XOrig, FrameDims) = loadVideo(filename)
     N = XOrig.shape[0]
     BlockLen = min(BlockLen, N)
-    NBlocks = int(np.ceil(1 + (N - BlockLen)/BlockHop))
-    ActualRandDraws = int(np.ceil(float(NRandDraws)/NBlocks))
-    print "ActualRandDraws = ", ActualRandDraws
-    for i in range(ActualRandDraws):
+    i = 0
+    while len(PScores) < NRandDraws:
+        cleanupTempFiles()
         doSaveVideo = False
         if i == 0:
             doSaveVideo = True
@@ -158,15 +158,17 @@ def runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, Bl
         filePrefix = ""
         if i == 0:
             filePrefix = "%s_%g_%i_%g"%(filename, Noise, BlurExtent, ByteErrorFrac)
-        print("Random draw %i of %i"%(i, ActualRandDraws))
+        print("Doing random draw %i of %i"%(len(PScores), NRandDraws))
         if ByteErrorFrac > 0:
             (XSample, ThisFrameDims) = simulateByteErrors(XSample, ThisFrameDims, ByteErrorFrac)
         if BlurExtent > 0:
             XSample = simulateCameraShake(XSample, ThisFrameDims, BlurExtent)
         XSample = XSample + Noise*np.random.randn(XSample.shape[0], XSample.shape[1])
-        (p, qp) = processVideo(XSample, ThisFrameDims, BlockLen, BlockHop, win, dim, filePrefix, doSaveVideo)
+        (p, qp) = processVideo(XSample, ThisFrameDims, BlockLen, BlockHop, win, dim, filePrefix, doSaveVideo=doSaveVideo)
+        print p
         PScores += p
         QPScores += qp
+        i += 1
     return (np.array(PScores), np.array(QPScores))
 
 def getROC(T, F):
@@ -203,17 +205,17 @@ if __name__ == '__main__':
     BlockHop = 10
     win = 30
     dim = 40
-    NRandDraws = 100
+    NRandDraws = 200
 
     files = {'quasiperiodic':'Videos/QuasiperiodicCircles.ogg', 'pendulum':'Videos/pendulum.avi', 'explosions':'Videos/explosions.mp4', 'heartbeat':'Videos/heartcrop.avi', 'driving':"Videos/drivingscene.mp4", 'explosions':'Videos/explosions.mp4'}
 
     params = [{'Noise':0, 'BlurExtent':0, 'ByteError':0}]
     for Noise in [0.5, 1, 2]:
-        params.append({'Noise':Noise, 'BlurExtent':0, 'ByteError':0})
+       params.append({'Noise':Noise, 'BlurExtent':0, 'ByteError':0})
     for BlurExtent in [20, 40, 80]:
-        params.append({'Noise':0, 'BlurExtent':BlurExtent, 'ByteError':0})
+       params.append({'Noise':0, 'BlurExtent':BlurExtent, 'ByteError':0})
     for ByteError in [0.1, 0.3, 0.6]:
-        params.append({'Noise':0, 'BlurExtent':0, 'ByteError':ByteError})
+       params.append({'Noise':0, 'BlurExtent':0, 'ByteError':ByteError})
 
     for name in files:
         filename = files[name]

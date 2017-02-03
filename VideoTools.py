@@ -41,6 +41,12 @@ def rgb2gray(F, repDims = True):
     else:
         return G
 
+def cleanupTempFiles():
+    files = os.listdir('.')
+    for f in files:
+        if f.find(TEMP_STR) > -1:
+            os.remove(f)
+
 #Input: path: Either a filename or a folder
 #Returns: tuple (Video NxP array, dimensions of video)
 def loadVideo(path, YCbCr = False):
