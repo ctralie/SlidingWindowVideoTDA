@@ -86,18 +86,22 @@ def checkLattice(Q, JJ, II, L, d, offset, CSmooth, doPlot = False):
         score = (1+err/r1)*((1.0/denom)**3)
 
     if doPlot:
-        plt.imshow(CSmooth, cmap='afmhot', interpolation = 'nearest')
+        #Figure out extent of image so
+        e = (-offset, -offset+CSmooth.shape[0]-1, -offset + CSmooth.shape[1]-1, -offset)
+        plt.imshow(CSmooth, extent=e, cmap='afmhot', interpolation = 'nearest')
         plt.hold(True)
         #Draw peaks
-        plt.scatter(JJ + offset, II + offset, 20, 'r')
+        plt.scatter(JJ, II, 20, 'r')
         #Draw lattice points
-        plt.scatter(Q[:, 1] + offset, Q[:, 0] + offset, 20, 'b')
+        plt.scatter(Q[:, 1], Q[:, 0], 20, 'b')
         #Draw matched peaks
-        plt.scatter(J, I, 30, 'g')
+        plt.scatter(J - offset, I - offset, 30, 'g')
 
         plt.title("Err = %.3g, Matched: %.3g\nUnmatched:%.3g, score = %.3g"%(err, r1, r2, score))
-        plt.xlim([0, CSmooth.shape[1]])
-        plt.ylim([0, CSmooth.shape[0]])
+        plt.xlim([e[0], e[1]])
+        plt.ylim([e[2], e[3]])
+        plt.xlabel('X Lag')
+        plt.ylabel('Y Lag')
     return (err, r1, score, Q)
 
 def checkSquareLattice(JJ, II, L, d, offset, CSmooth, doPlot = False):
