@@ -105,7 +105,10 @@ def processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, d
         idx = idxs[j]
         Tau = win/float(dim-1)
         dT = (len(idx)-dim*Tau)/float(len(idx))
-        XS = getSlidingWindowVideo(X[idx, :], dim, Tau, dT)
+        try:
+            XS = getSlidingWindowVideo(X[idx, :], dim, Tau, dT)
+        except:
+            continue
 
         #Mean-center and normalize sliding window
         XS = XS - np.mean(XS, 1)[:, None]
