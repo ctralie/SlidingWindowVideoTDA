@@ -1,4 +1,5 @@
 from VideoTools import *
+from AlternativePeriodicityScoring import *
 from TDA import *
 from sklearn.decomposition import PCA
 import numpy as np
@@ -22,8 +23,10 @@ def getPeriodicityScores(I1Z2, I1Z3, I2):
     if len(idx) > 0:
         H2Max1 = I2[idx[0], 1] - I2[idx[0], 0]
     #Periodicity Score
-    PScore = (Z3H1Max1 - Z3H1Max2)/np.sqrt(3)
-    PScore = max((Z2H1Max1 - Z2H1Max2)/np.sqrt(3), PScore)
+    PScore = max(Z3H1Max1/np.sqrt(3), Z2H1Max1/np.sqrt(3))
+    #Modified Periodicity Score
+    PScoreMod = (Z3H1Max1 - Z3H1Max2)/np.sqrt(3)
+    PScoreMod = max((Z2H1Max1 - Z2H1Max2)/np.sqrt(3), PScore)
     #Harmonic Subscore
     HSubscore = 0
     if Z3H1Max1 > 0:
@@ -32,7 +35,7 @@ def getPeriodicityScores(I1Z2, I1Z3, I2):
         HSubscore = 1
     #Quasiperiodicity Score
     QPScore = np.sqrt(Z3H1Max2*H2Max1/3.0)
-    return (PScore, HSubscore, QPScore)
+    return (PScore, PScoreMod, HSubscore, QPScore)
 
 def makePlot(X, I1Z2, I1Z3, I2):
     if X.size == 0:
@@ -42,7 +45,7 @@ def makePlot(X, I1Z2, I1Z3, I2):
     D = XSqr[:, None] + XSqr[None, :] - 2*X.dot(X.T)
     D[D < 0] = 0
     D = np.sqrt(D)
-    (PScore, HSubscore, QPScore) = getPeriodicityScores(I1Z2, I1Z3, I2)
+    (PScore, PScoreMod, HSubscore, QPScore) = getPeriodicityScores(I1Z2, I1Z3, I2)
 
     #PCA
     pca = PCA(n_components = 20)
@@ -98,8 +101,10 @@ def processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, d
             thisidxs = thisidxs[thisidxs < N]
             idxs.append(thisidxs)
 
-    PScores = []
-    QPScores = []
+    PScores = [] #Periodicity Scores
+    MPScores = [] #Modified Periodicity Scores
+    QPScores = [] #Modified Quasiperiodicity Scores
+    LScores = [] #Lattice Scores
     for j in range(len(idxs)):
         print("Block %i of %i"%(j, len(idxs)))
         idx = idxs[j]
@@ -129,9 +134,12 @@ def processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, d
             I2 = PDs2[2]
             if I2.size == 0:
                 I2 = np.array([[0, 0]])
-        (PScore, HSubscore, QPScore) = getPeriodicityScores(I1Z2, I1Z3, I2)
+        (PScore, PScoreMod, HSubscore, QPScore) = getPeriodicityScores(I1Z2, I1Z3, I2)
         PScores += [PScore]
+        MPScores += [PScoreMod]
         QPScores += [QPScore]
+        #Get Cutler Davis Lattice Score
+        LScores += [getCutlerDavisLatticeScore(XSample[idx, :])['score']]
 
         if j == 0 and len(filePrefix) > 0:
             #Save an example persistence diagram for a block in the first draw
@@ -140,14 +148,16 @@ def processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, d
             plt.savefig("%s_Stats.svg"%filePrefix, bbox_inches='tight')
             if doSaveVideo:
                 saveVideo(XSample[idxs[0], :], FrameDims, "%s.ogg"%filePrefix)
-    return (PScores, QPScores)
+    return (PScores, MPScores, QPScores, LScores)
 
 def runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent, ByteErrorFrac):
     print("PROCESSING ", filename, "....")
     cleanupTempFiles()
     (XOrig, FrameDims) = loadVideo(filename)
     PScores = []
+    MPScores = []
     QPScores = []
+    LScores = []
     N = XOrig.shape[0]
     BlockLen = min(BlockLen, N)
     i = 0
@@ -173,12 +183,14 @@ def runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, Bl
         if BlurExtent > 0:
             XSample = simulateCameraShake(XSample, ThisFrameDims, BlurExtent)
         XSample = XSample + Noise*np.random.randn(XSample.shape[0], XSample.shape[1])
-        (p, qp) = processVideo(XSample, ThisFrameDims, BlockLen, BlockHop, win, dim, filePrefix, doSaveVideo=doSaveVideo)
-        print p
+        (p, mp, qp, l) = processVideo(XSample, ThisFrameDims, BlockLen, BlockHop, win, dim, filePrefix, doSaveVideo=doSaveVideo)
+        print "PScore = %s, MPScore = %s, QPScore = %s, LScore = %s"%(p, mp, qp, l)
         PScores += p
+        MPScores += mp
         QPScores += qp
+        LScores += l
         i += 1
-    return (np.array(PScores), np.array(QPScores))
+    return (np.array(PScores), np.array(MPScores), np.array(QPScores), np.array(LScores))
 
 def getROC(T, F):
     values = np.sort(np.array(T.flatten().tolist() + F.flatten().tolist()))
@@ -216,14 +228,14 @@ if __name__ == '__main__':
     dim = 40
     NRandDraws = 200
 
-    files = {'quasiperiodic':'Videos/QuasiperiodicCircles.ogg', 'pendulum':'Videos/pendulum.avi', 'explosions':'Videos/explosions.mp4', 'heartbeat':'Videos/heartcrop.avi', 'driving':"Videos/drivingscene.mp4", 'explosions':'Videos/explosions.mp4'}
+    files = {'quasiperiodic':'Videos/QuasiperiodicCircles.ogg', 'pendulum':'Videos/pendulum.avi', 'explosions':'Videos/explosions.mp4', 'heartbeat':'Videos/heartcrop.avi', 'birdflapping':'Videos/BirdFlapping.avi', 'driving':"Videos/drivingscene.mp4", 'explosions':'Videos/explosions.mp4'}
 
     params = [{'Noise':0, 'BlurExtent':0, 'ByteError':0}]
-    for Noise in [0.5, 1, 2]:
+    for Noise in [0.5, 1, 1.5, 2, 2.5, 3]:
        params.append({'Noise':Noise, 'BlurExtent':0, 'ByteError':0})
-    for BlurExtent in [20, 40, 80]:
+    for BlurExtent in [20, 30, 40, 50, 60, 70, 80]:
        params.append({'Noise':0, 'BlurExtent':BlurExtent, 'ByteError':0})
-    for ByteError in [0.1, 0.3, 0.6]:
+    for ByteError in [0.05, 0.1, 0.2, 0.3, 0.35, 0.4, 0.45]:
        params.append({'Noise':0, 'BlurExtent':0, 'ByteError':ByteError})
 
     for name in files:
@@ -232,7 +244,7 @@ if __name__ == '__main__':
             [Noise, BlurExtent, ByteError] = [param['Noise'], param['BlurExtent'], param['ByteError']]
             foutname = "Scores_%s_%g_%i_%g.mat"%(name, Noise, BlurExtent, ByteError)
             if not os.path.exists(foutname):
-                (PScores, QPScores) = runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent, ByteError)
-                sio.savemat(foutname, {"PScores":PScores, "QPScores":QPScores})
+                (PScores, MPScores, QPScores, LScores) = runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent, ByteError)
+                sio.savemat(foutname, {"PScores":PScores, "MPScores":MPScores, "QPScores":QPScores, "LScores":LScores})
             else:
                 print "Already computed %s, skipping..."%foutname
