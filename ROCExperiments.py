@@ -110,10 +110,7 @@ def processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, d
         idx = idxs[j]
         Tau = win/float(dim-1)
         dT = (len(idx)-dim*Tau)/float(len(idx))
-        try:
-            XS = getSlidingWindowVideo(X[idx, :], dim, Tau, dT)
-        except:
-            continue
+        XS = getSlidingWindowVideo(X[idx, :], dim, Tau, dT)
 
         #Mean-center and normalize sliding window
         XS = XS - np.mean(XS, 1)[:, None]
@@ -178,12 +175,15 @@ def runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, Bl
             #hardly any frames, then skip this draw
             if XSample.size == 0:
                 continue
-            if XSample.shape[0] < 10:
+            if XSample.shape[0] < 30:
                 continue
         if BlurExtent > 0:
             XSample = simulateCameraShake(XSample, ThisFrameDims, BlurExtent)
         XSample = XSample + Noise*np.random.randn(XSample.shape[0], XSample.shape[1])
-        (p, mp, qp, l) = processVideo(XSample, ThisFrameDims, BlockLen, BlockHop, win, dim, filePrefix, doSaveVideo=doSaveVideo)
+        try:
+            (p, mp, qp, l) = processVideo(XSample, ThisFrameDims, BlockLen, BlockHop, win, dim, filePrefix, doSaveVideo=doSaveVideo)
+        except:
+            continue
         print "PScore = %s, MPScore = %s, QPScore = %s, LScore = %s"%(p, mp, qp, l)
         PScores += p
         MPScores += mp
