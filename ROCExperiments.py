@@ -26,7 +26,7 @@ def getPeriodicityScores(I1Z2, I1Z3, I2):
     PScore = max(Z3H1Max1/np.sqrt(3), Z2H1Max1/np.sqrt(3))
     #Modified Periodicity Score
     PScoreMod = (Z3H1Max1 - Z3H1Max2)/np.sqrt(3)
-    PScoreMod = max((Z2H1Max1 - Z2H1Max2)/np.sqrt(3), PScore)
+    PScoreMod = max((Z2H1Max1 - Z2H1Max2)/np.sqrt(3), PScoreMod)
     #Harmonic Subscore
     HSubscore = 0
     if Z3H1Max1 > 0:

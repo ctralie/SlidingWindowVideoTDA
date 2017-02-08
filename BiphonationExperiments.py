@@ -145,7 +145,7 @@ if __name__ == "__main__":
     foutindex = open("VocalCordsResults/index.html", 'w')
     foutindex.write("<html><body>")
     foutindex.write("<table border = 1 cellpadding = 4>")
-    foutindex.write("<tr><td><h2>Video Name</h2></td><td><h2>Periodicity Score</h2></td><td><h2>Harmonic Subscore</h2></td><td><h2>Quasiperiodicity Score</h2></td><td><h2>Persistence Diagrams</h2></td></tr>")
+    foutindex.write("<tr><td><h2>Video Name</h2></td><td><h2>Periodicity Score</h2></td><td><h2>Modified Periodicity Score</h2></td><td><h2>Harmonic Subscore</h2></td><td><h2>Quasiperiodicity Score</h2></td><td><h2>Persistence Diagrams</h2></td></tr>")
     for V in Videos:
         (dim, Tau, dT, name, diffusionParams, derivWin) = (V['dim'], V['Tau'], V['dT'], V['name'], V['diffusionParams'], V['derivWin'])
         i1 = V['startframe']
@@ -169,7 +169,7 @@ if __name__ == "__main__":
         fout.write("<BR><h2>Scores</h2><BR>")
         writePeriodicityScores(fout, PScore, PScoreMod, HSubscore, QPScore)
         fout.write("<BR><img src = %s_Stats.svg>"%name)
-        foutindex.write("<tr><td><a href = %s.html>%s</a></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><img src = %s_Stats.svg width = 200></tr>\n"%(name, name, PScore, HSubscore, QPScore, name))
+        foutindex.write("<tr><td><a href = %s.html>%s</a></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><img src = %s_Stats.svg width = 200></tr>\n"%(name, name, PScore, PScoreMod, HSubscore, QPScore, name))
 
         fout.write("<BR><BR><HR>")
 
@@ -181,7 +181,7 @@ if __name__ == "__main__":
         fout.write("<BR><h2>Scores</h2><BR>")
         writePeriodicityScores(fout, PScore, PScoreMod, HSubscore, QPScore)
         fout.write("<BR><img src = %sGrad_Stats.svg>"%name)
-        foutindex.write("<tr><td><a href = %s.html#Grad>%s Dirichlet Seminorm</a></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><img src = %sGrad_Stats.svg width = 200></tr>\n"%(name, name, PScore, HSubscore, QPScore, name))
+        foutindex.write("<tr><td><a href = %s.html>%s</a></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><img src = %s_Stats.svg width = 200></tr>\n"%(name, name, PScore, PScoreMod, HSubscore, QPScore, name))
 
         fout.write("</body></html>")
         fout.close()
