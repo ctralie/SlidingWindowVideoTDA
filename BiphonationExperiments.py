@@ -111,36 +111,52 @@ def writePeriodicityScores(fout, PScore, PScoreMod, HSubscore, QPScore):
 if __name__ == "__main__":
     gradSigma = 1
     Videos = []
-    #AP Biphonation Juergen Neubauer
-    Videos.append({'file':'VocalCordsVideos/APBiphonationCrop.mp4', 'name':'APBiphonation', 'startframe':700, 'endframe':1100, 'dim':20, 'Tau':2, 'dT':0.5, 'derivWin':10, 'diffusionParams':None})
 
-    #Period is about 10 frames
+    #############################################
+    ###     Periodic Videos
+    #############################################
+    #Christan Herbst Periodic
+    Videos.append({'file':'VocalCordsVideos/Phasegram_Periodic.mp4', 'name':'HerbstPeriodic', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':0.5, 'dT':0.5, 'derivWin':10, 'diffusionParams':None})
+    
+    #MSU Glottis Normal Periodic
+    Videos.append({'file':'VocalCordsVideos/NormalPeriodicCrop.ogg', 'name':'NormalPeriodic', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':0.5, 'dT':0.5, 'derivWin':10, 'diffusionParams':None})
+    
+    #############################################
+    ###     Quasiperiodic Videos
+    #############################################
+    #AP Biphonation Juergen Neubauer
+    Videos.append({'file':'VocalCordsVideos/APBiphonationCrop.mp4', 'name':'APBiphonation', 'startframe':700, 'endframe':1100, 'dim':40, 'Tau':1, 'dT':0.5, 'derivWin':10, 'diffusionParams':None})
+
+    #AP Biphonation 2 Juergen Neubauer Period is about 10 frames
     Videos.append({'file':'VocalCordsVideos/APBiphonation2.mp4', 'name':'APBiphonation2', 'startframe':0, 'endframe':200, 'dim':40, 'Tau':0.25, 'dT':0.25, 'derivWin':2, 'diffusionParams':None})
 
     #Period is about 8 frames
     Videos.append({'file':'VocalCordsVideos/ClinicalAsymmetry.mp4', 'name':'ClinicalAsymmetry', 'startframe':0, 'endframe':200, 'dim':32, 'Tau':0.25, 'dT':0.25, 'derivWin':2, 'diffusionParams':None})
 
+    #############################################
+    ###     Harmonic Videos
+    #############################################
     #MSU Glottis Mucus Biphonation
     Videos.append({'file':'VocalCordsVideos/LTR_ED_MucusBiphonCrop.avi', 'name':'MucusBiphonation', 'startframe':0, 'endframe':-1, 'dim':36, 'Tau':1, 'dT':0.25, 'derivWin':10, 'diffusionParams':None})
 
+    #Christian Herbst Subharmonic
+    Videos.append({'file':'VocalCordsVideos/Phasegram_Subharmonic.mp4', 'name':'HerbstSubharmonic', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':0.5, 'dT':0.5, 'derivWin':10, 'diffusionParams':None})
+
+
+    #############################################
+    ###     Perturbed Videos
+    #############################################
     #MSU Glottis Mucus Periodic Perturbed
     Videos.append({'file':'VocalCordsVideos/LTR_BO_MucusPertCrop.avi', 'name':'MucusPerturbedPeriodic', 'startframe':0, 'endframe':-1, 'dim':56, 'Tau':0.25, 'dT':0.25, 'derivWin':10, 'diffusionParams':None})
-
-    #MSU Glottis Normal Periodic
-    Videos.append({'file':'VocalCordsVideos/NormalPeriodicCrop.ogg', 'name':'NormalPeriodic', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':0.5, 'dT':0.5, 'derivWin':10, 'diffusionParams':None})
+    
+    #Christian Herbst Irregular
+    Videos.append({'file':'VocalCordsVideos/Phasegram_Irregular.mp4', 'name':'HerbstIrregular', 'startframe':0, 'endframe':600, 'dim':70, 'Tau':0.5, 'dT':1, 'derivWin':10, 'diffusionParams':None})
 
     #Rayleigh Benard Raw Embeddings
     #Videos = []
     #Videos.append({'file':'RayleighBenard/g21r4000.mpeg', 'name':'RayleighBenardConvection', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':0.25, 'dT':1, 'derivWin':10, 'diffusionParams':None})
 
     #Videos.append({'file':'RayleighBenard/Quasiperiodic.mp4', 'name':'RayleighBenardQuasiperiodic', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':2, 'dT':2, 'derivWin':10, 'diffusionParams':None})
-
-    #Videos from Christan Herbst
-    Videos.append({'file':'VocalCordsVideos/Phasegram_Periodic.mp4', 'name':'HerbstPeriodic', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':0.5, 'dT':0.5, 'derivWin':10, 'diffusionParams':None})
-
-    Videos.append({'file':'VocalCordsVideos/Phasegram_Subharmonic.mp4', 'name':'HerbstSubharmonic', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':0.5, 'dT':0.5, 'derivWin':10, 'diffusionParams':None})
-
-    Videos.append({'file':'VocalCordsVideos/Phasegram_Irregular.mp4', 'name':'HerbstIrregular', 'startframe':0, 'endframe':600, 'dim':70, 'Tau':0.5, 'dT':1, 'derivWin':10, 'diffusionParams':None})
 
     foutindex = open("VocalCordsResults/index.html", 'w')
     foutindex.write("<html><body>")
@@ -181,7 +197,7 @@ if __name__ == "__main__":
         fout.write("<BR><h2>Scores</h2><BR>")
         writePeriodicityScores(fout, PScore, PScoreMod, HSubscore, QPScore)
         fout.write("<BR><img src = %sGrad_Stats.svg>"%name)
-        foutindex.write("<tr><td><a href = %s.html>%s</a></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><img src = %s_Stats.svg width = 200></tr>\n"%(name, name, PScore, PScoreMod, HSubscore, QPScore, name))
+        foutindex.write("<tr><td><a href = %s.html#Grad>%s Dirichlet Seminorm</a></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><img src = %sGrad_Stats.svg width = 200></tr>\n"%(name, name, PScore, PScoreMod, HSubscore, QPScore, name))
 
         fout.write("</body></html>")
         fout.close()
