@@ -100,9 +100,10 @@ def writeVideo(fout, video):
         </video>
         """%video)
 
-def writePeriodicityScores(fout, PScore, HSubscore, QPScore):
+def writePeriodicityScores(fout, PScore, PScoreMod, HSubscore, QPScore):
     fout.write("<table>")
     fout.write("<tr><td><h2>Periodicity Score</h2></td><td><h2>%.3g</h2></td></tr>"%PScore)
+    fout.write("<tr><td><h2>Modified Periodicity Score</h2></td><td><h2>%.3g</h2></td></tr>"%PScoreMod)
     fout.write("<tr><td><h2>Harmonic Subscore</h2></td><td><h2>%.3g</h2></td></tr>"%HSubscore)
     fout.write("<tr><td><h2>Quasiperiodicity Score</h2></td><td><h2>%.3g</h2></td></tr>"%QPScore)
     fout.write("</table>")
@@ -128,10 +129,18 @@ if __name__ == "__main__":
     #MSU Glottis Normal Periodic
     Videos.append({'file':'VocalCordsVideos/NormalPeriodicCrop.ogg', 'name':'NormalPeriodic', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':0.5, 'dT':0.5, 'derivWin':10, 'diffusionParams':None})
 
+    #Rayleigh Benard Raw Embeddings
     #Videos = []
     #Videos.append({'file':'RayleighBenard/g21r4000.mpeg', 'name':'RayleighBenardConvection', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':0.25, 'dT':1, 'derivWin':10, 'diffusionParams':None})
 
     #Videos.append({'file':'RayleighBenard/Quasiperiodic.mp4', 'name':'RayleighBenardQuasiperiodic', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':2, 'dT':2, 'derivWin':10, 'diffusionParams':None})
+
+    #Videos from Christan Herbst
+    Videos.append({'file':'VocalCordsVideos/Phasegram_Periodic.mp4', 'name':'HerbstPeriodic', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':0.5, 'dT':0.5, 'derivWin':10, 'diffusionParams':None})
+
+    Videos.append({'file':'VocalCordsVideos/Phasegram_Subharmonic.mp4', 'name':'HerbstSubharmonic', 'startframe':0, 'endframe':-1, 'dim':70, 'Tau':0.5, 'dT':0.5, 'derivWin':10, 'diffusionParams':None})
+
+    Videos.append({'file':'VocalCordsVideos/Phasegram_Irregular.mp4', 'name':'HerbstIrregular', 'startframe':0, 'endframe':600, 'dim':70, 'Tau':0.5, 'dT':1, 'derivWin':10, 'diffusionParams':None})
 
     foutindex = open("VocalCordsResults/index.html", 'w')
     foutindex.write("<html><body>")
@@ -143,6 +152,7 @@ if __name__ == "__main__":
         i2 = V['endframe']
         (I, IDims) = loadVideo(V['file'])
         I = I[i1:i2, :]
+        print "I.shape = ", I.shape
         IGrad = getGradientVideo(I, IDims, gradSigma)
         fout = open("VocalCordsResults/%s.html"%name, 'w')
         fout.write("<html><body")
@@ -155,9 +165,9 @@ if __name__ == "__main__":
         (I1Z2, I1Z3, I2) = doSlidingWindowVideo(I, dim, Tau, dT, "VocalCordsResults/%s"%name, diffusionParams, derivWin)
         fout.write("<BR><BR><h1>%s</h1><BR>"%name)
         writeVideo(fout, "%s.ogg"%name)
-        (PScore, HSubscore, QPScore) = getPeriodicityScores(I1Z2, I1Z3, I2)
+        (PScore, PScoreMod, HSubscore, QPScore) = getPeriodicityScores(I1Z2, I1Z3, I2)
         fout.write("<BR><h2>Scores</h2><BR>")
-        writePeriodicityScores(fout, PScore, HSubscore, QPScore)
+        writePeriodicityScores(fout, PScore, PScoreMod, HSubscore, QPScore)
         fout.write("<BR><img src = %s_Stats.svg>"%name)
         foutindex.write("<tr><td><a href = %s.html>%s</a></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><img src = %s_Stats.svg width = 200></tr>\n"%(name, name, PScore, HSubscore, QPScore, name))
 
@@ -167,9 +177,9 @@ if __name__ == "__main__":
         (I1Z2, I1Z3, I2) = doSlidingWindowVideo(IGrad, dim, Tau, dT, "VocalCordsResults/%sGrad"%name, diffusionParams, derivWin)
         fout.write("<BR><BR><h1><a name = \"Grad\">%s Dirichlet Seminorm</a></h1><BR>"%name)
         writeVideo(fout, "%sGrad.ogg"%name)
-        (PScore, HSubscore, QPScore) = getPeriodicityScores(I1Z2, I1Z3, I2)
+        (PScore, PScoreMod, HSubscore, QPScore) = getPeriodicityScores(I1Z2, I1Z3, I2)
         fout.write("<BR><h2>Scores</h2><BR>")
-        writePeriodicityScores(fout, PScore, HSubscore, QPScore)
+        writePeriodicityScores(fout, PScore, PScoreMod, HSubscore, QPScore)
         fout.write("<BR><img src = %sGrad_Stats.svg>"%name)
         foutindex.write("<tr><td><a href = %s.html#Grad>%s Dirichlet Seminorm</a></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><h3>%.3g</h3></td><td><img src = %sGrad_Stats.svg width = 200></tr>\n"%(name, name, PScore, HSubscore, QPScore, name))
 

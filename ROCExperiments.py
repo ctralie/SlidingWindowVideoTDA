@@ -30,7 +30,7 @@ def getPeriodicityScores(I1Z2, I1Z3, I2):
     #Harmonic Subscore
     HSubscore = 0
     if Z3H1Max1 > 0:
-        1 - Z2H1Max1/Z3H1Max1
+        HSubscore = 1 - Z2H1Max1/Z3H1Max1
     elif Z2H1Max1 > 0:
         HSubscore = 1
     #Quasiperiodicity Score
