@@ -1,6 +1,7 @@
 from VideoTools import *
 from AlternativePeriodicityScoring import *
 from TDA import *
+from GeometryTools import *
 from sklearn.decomposition import PCA
 import numpy as np
 import scipy.io as sio
@@ -118,7 +119,7 @@ def processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, d
 
         [I1Z2, I1Z3, I2] = [np.array([[0, 0]]), np.array([[0, 0]]), np.array([[0, 0]])]
         PDs2 = doRipsFiltration(XS, 2, coeff=2)
-        PDs3 = doRipsFiltration(XS, 1, coeff=3)
+        PDs3 = doRipsFiltration(XS, 1, coeff=2)
         if len(PDs2) > 1:
             I1Z2 = PDs2[1]
             if I1Z2.size == 0:
@@ -202,6 +203,9 @@ def getROC(T, F):
         TP[i] = np.sum(T >= values[i])/float(T.size)
     return (FP, TP)
 
+def getAUROC(FP, TP):
+    return np.abs(np.sum((FP[1::]-FP[0:-1])*TP[1::]))
+
 def plotROC(psTrue, psFalse, filename):
     #Plot ROC curve
     (FP, TP) = getROC(psTrue, psFalse)
@@ -222,20 +226,21 @@ def plotROC(psTrue, psFalse, filename):
     plt.savefig("Hists_ROC%s.svg"%filename, bbox_inches='tight')
 
 if __name__ == '__main__':
-    BlockLen = 300
+    BlockLen = 150
     BlockHop = 10
     win = 30
     dim = 40
-    NRandDraws = 200
+    NRandDraws = 600
 
-    files = {'quasiperiodic':'Videos/QuasiperiodicCircles.ogg', 'pendulum':'Videos/pendulum.avi', 'explosions':'Videos/explosions.mp4', 'heartbeat':'Videos/heartcrop.avi', 'birdflapping':'Videos/BirdFlapping.avi', 'driving':"Videos/drivingscene.mp4", 'explosions':'Videos/explosions.mp4'}
+    #files = {'quasiperiodic':'Videos/QuasiperiodicCircles.ogg', 
+    files = {'pendulum':'Videos/pendulum.avi', 'explosions':'Videos/explosions.mp4', 'heartbeat':'Videos/heartcrop.avi', 'birdflapping':'Videos/BirdFlapping.avi', 'driving':"Videos/drivingscene.mp4"}
 
     params = [{'Noise':0, 'BlurExtent':0, 'ByteError':0}]
-    for Noise in [0.5, 1, 1.5, 2, 2.5, 3]:
+    for Noise in [1, 2, 3]:
        params.append({'Noise':Noise, 'BlurExtent':0, 'ByteError':0})
-    for BlurExtent in [20, 30, 40, 50, 60, 70, 80]:
+    for BlurExtent in [20, 40, 60, 80]:
        params.append({'Noise':0, 'BlurExtent':BlurExtent, 'ByteError':0})
-    for ByteError in [0.05, 0.1, 0.2, 0.3, 0.35, 0.4, 0.45]:
+    for ByteError in [0.05, 0.1, 0.2, 0.3]:
        params.append({'Noise':0, 'BlurExtent':0, 'ByteError':ByteError})
 
     for name in files:
