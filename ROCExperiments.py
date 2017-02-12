@@ -118,8 +118,9 @@ def processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, d
         XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
 
         [I1Z2, I1Z3, I2] = [np.array([[0, 0]]), np.array([[0, 0]]), np.array([[0, 0]])]
-        PDs2 = doRipsFiltration(XS, 2, coeff=2)
-        PDs3 = doRipsFiltration(XS, 1, coeff=2)
+        #PDs2 = doRipsFiltration(XS, 2, coeff=2)
+        PDs3 = doRipsFiltration(XS, 1, coeff=3)
+        PDs2 = PDs3
         if len(PDs2) > 1:
             I1Z2 = PDs2[1]
             if I1Z2.size == 0:
