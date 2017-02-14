@@ -116,6 +116,8 @@ def processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, d
         #Mean-center and normalize sliding window
         XS = XS - np.mean(XS, 1)[:, None]
         XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
+        XS = getMeanShift(XS)
+        XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
 
         [I1Z2, I1Z3, I2] = [np.array([[0, 0]]), np.array([[0, 0]]), np.array([[0, 0]])]
         #PDs2 = doRipsFiltration(XS, 2, coeff=2)
@@ -233,7 +235,7 @@ if __name__ == '__main__':
     dim = 40
     NRandDraws = 600
 
-    #files = {'quasiperiodic':'Videos/QuasiperiodicCircles.ogg', 
+    #files = {'quasiperiodic':'Videos/QuasiperiodicCircles.ogg',
     files = {'pendulum':'Videos/pendulum.avi', 'explosions':'Videos/explosions.mp4', 'heartbeat':'Videos/heartcrop.avi', 'birdflapping':'Videos/BirdFlapping.avi', 'driving':"Videos/drivingscene.mp4"}
 
     params = [{'Noise':0, 'BlurExtent':0, 'ByteError':0}]
