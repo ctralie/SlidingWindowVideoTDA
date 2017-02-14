@@ -15,8 +15,21 @@ def getMeanShift(X, theta = np.pi/16):
     XMean = np.zeros(X.shape)
     for i in range(N):
         idx = D[i, :].nonzero()[1]
+        print idx
         XMean[i, :] = np.mean(X[idx, :], 0)
-    return XMean    
+    return XMean
+
+def getMeanShiftKNN(X, K):
+    N = X.shape[0]
+    D = np.sum(X**2, 1)[:, None]
+    D = D + D.T - 2*X.dot(X.T)
+    allidx = np.argsort(D, 1)
+    XMean = np.zeros(X.shape)
+    for i in range(N):
+        idx = allidx[i, 0:K]
+        print idx
+        XMean[i, :] = np.mean(X[idx, :], 0)
+    return XMean
 
 if __name__ == '__main__':
     t = np.linspace(0, 10*np.pi, 301)[0:300]
@@ -24,9 +37,9 @@ if __name__ == '__main__':
     X[:, 0] = np.cos(t)
     X[:, 1] = np.sin(t)
     np.random.seed(420)
-    X = X + 0.1*np.random.randn(X.shape[0], 2)    
-    XMean = getMeanShift(X)
-    
+    X = X + 0.1*np.random.randn(X.shape[0], 2)
+    XMean = getMeanShiftKNN(X, 10)
+
     plt.plot(X[:, 0], X[:, 1], '.')
     plt.hold(True)
     plt.scatter(XMean[:, 0], XMean[:, 1], 20)

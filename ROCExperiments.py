@@ -81,7 +81,7 @@ def makePlot(X, I1Z2, I1Z3, I2):
     plt.title("Eigenvalues")
 
 
-def processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doDerivative = True, doSaveVideo = True):
+def processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, doDerivative = True, doSaveVideo = True, meanShiftK = 0, meanShiftTheta = 0):
     print("Doing PCA...")
     X = getPCAVideo(XSample)
     print("Finished PCA")
@@ -116,8 +116,14 @@ def processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, d
         #Mean-center and normalize sliding window
         XS = XS - np.mean(XS, 1)[:, None]
         XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
-        XS = getMeanShift(XS)
-        XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
+        if meanShiftK > 0:
+            print "Doing Mean Shift KNN, K = %i"%meanShiftK
+            XS = getMeanShiftKNN(XS, meanShiftK)
+            XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
+        if meanShiftTheta > 0:
+            print "Doing Mean Shift Theta = %g"%meanShiftTheta
+            XS = getMeanShift(XS, meanShiftTheta)
+            XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
 
         [I1Z2, I1Z3, I2] = [np.array([[0, 0]]), np.array([[0, 0]]), np.array([[0, 0]])]
         #PDs2 = doRipsFiltration(XS, 2, coeff=2)
@@ -256,3 +262,12 @@ if __name__ == '__main__':
                 sio.savemat(foutname, {"PScores":PScores, "MPScores":MPScores, "QPScores":QPScores, "LScores":LScores})
             else:
                 print "Already computed %s, skipping..."%foutname
+
+if __name__ == '__main__2':
+    #Playing with mean shift
+    win = 30
+    dim = 40
+    np.random.seed(100)
+    (X, FrameDims) = loadVideo("Videos/heartcrop.avi")
+    X += 2*np.random.randn(X.shape[0], X.shape[1])
+    (PScores, MPScores, QPScores, LScores) = processVideo(X, FrameDims, -1, 10, win, dim, "heartcropDerivMeanShiftTheta", doDerivative = True, doSaveVideo = True)
