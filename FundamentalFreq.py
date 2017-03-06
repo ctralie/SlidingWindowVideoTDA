@@ -41,7 +41,9 @@ def estimateFundamentalFreq(x, doPlot = False):
     maxes[1:-1] = (np.sign(corr[1:-1] - corr[0:-2])==1)*(np.sign(corr[1:-1] - corr[2::])==1)
     maxidx = np.arange(corr.size)
     maxidx = maxidx[maxes == 1]
-    maxTau = maxidx[np.argmax(corr[maxidx])]
+    maxTau = 0
+    if len(corr[maxidx]) > 0:
+        maxTau = maxidx[np.argmax(corr[maxidx])]
     
     if doPlot:
         plt.subplot(211)
@@ -55,7 +57,6 @@ def estimateFundamentalFreq(x, doPlot = False):
         plt.scatter(maxidx, corr[maxidx])
         plt.scatter([maxTau], [corr[maxTau]], 100, 'r')
         plt.title("Max Tau = %i, Clarity = %g"%(maxTau, corr[maxTau]))
-        plt.show()
     return (maxTau, corr[maxTau])
 
 if __name__ == '__main__':

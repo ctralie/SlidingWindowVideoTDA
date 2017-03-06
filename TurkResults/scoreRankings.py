@@ -9,8 +9,9 @@ if __name__ == "__main__":
     RTDAZ3 = sio.loadmat("TDARankingsMixZ3.mat")['R']
     RCutlerDavisFreq = sio.loadmat("CutlerDavisRankingsFreqMix.mat")['R']
     RCutlerDavisLattice = sio.loadmat("CutlerDavisRankingsLatticeMix.mat")['R']
+    RClarity = sio.loadmat("ClarityRankings.mat")['R']
     
-    Rs = {'RTurk':RTurk, 'RTDAZ2':RTDAZ2, 'RTDAZ3':RTDAZ3, 'RCutlerDavisFreq':RCutlerDavisFreq, 'RCutlerDavisLattice':RCutlerDavisLattice}
+    Rs = {'RTurk':RTurk, 'RTDAZ2':RTDAZ2, 'RTDAZ3':RTDAZ3, 'RCutlerDavisFreq':RCutlerDavisFreq, 'RCutlerDavisLattice':RCutlerDavisLattice, 'RClarity':RClarity}
     orders = {}
     fout = open("results.html", "w")
     fout.write("<h1>Orders</h1>\n<table>")
@@ -22,7 +23,7 @@ if __name__ == "__main__":
         fout.write("<tr><td>%s</td><td>%s</td></tr>"%(RName, orders[RName]))
     fout.write("</table><BR><BR>")
     
-    keys = ['RTDAZ2', 'RTDAZ3', 'RCutlerDavisFreq', 'RCutlerDavisLattice', 'RTurk']
+    keys = ['RTDAZ2', 'RTDAZ3', 'RCutlerDavisFreq', 'RCutlerDavisLattice', 'RTurk', 'RClarity']
     
     DsKT = np.zeros((len(Rs), len(Rs)))
     DsJW = np.zeros((len(Rs), len(Rs)))
@@ -42,7 +43,7 @@ if __name__ == "__main__":
     for i in range(len(Rs)):
         fout.write("<tr><td>%s</td>"%keys[i])
         for j in range(len(Rs)):
-            fout.write("<td>%g</td>"%DsKT[i, j])
+            fout.write("<td>%.3g</td>"%DsKT[i, j])
         fout.write("</tr>\n")
     fout.write("</table>")
     
@@ -56,7 +57,7 @@ if __name__ == "__main__":
     for i in range(len(Rs)):
         fout.write("<tr><td>%s</td>"%keys[i])
         for j in range(len(Rs)):
-            fout.write("<td>%g</td>"%DsJW[i, j])
+            fout.write("<td>%.3g</td>"%DsJW[i, j])
         fout.write("</tr>\n")
     fout.write("</table>")
     

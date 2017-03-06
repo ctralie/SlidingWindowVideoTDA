@@ -2,7 +2,25 @@ import numpy as np
 from ROCExperiments import *
 from VideoTools import *
 from AlternativePeriodicityScoring import *
+import sys
+sys.path.append("GeometricCoverSongs")
+sys.path.append("GeometricCoverSongs/SequenceAlignment")
+from SpectralMethods import *
+from CSMSSMTools import *
+from FundamentalFreq import *
 import scipy.io as sio
+
+def getClarity(X):
+    #Do Diffusion Maps
+    XD = getPCAVideo(X)
+    print("Finished PCA")
+    [XD, validIdx] = getTimeDerivative(XD, 10)
+    D = getCSM(XD, XD)
+    XDiffused = getDiffusionMap(D, 0.1)
+    x = XDiffused[:, -2] #Get the mode corresponding to the largest eigenvalue
+    x = x - np.mean(x)
+    (maxT, corr) = estimateFundamentalFreq(x, True)
+    return corr
 
 def saveRankings(idx, filename):
     R = []
@@ -18,6 +36,7 @@ def saveRankings(idx, filename):
 if __name__ == "__main__":
     scores = []
     scoresCD = []
+    clarity = []
     BlockLen = 160
     BlockHop = 80
     win = 20
@@ -27,9 +46,12 @@ if __name__ == "__main__":
     for i in range(NVideos):
         (XOrig, FrameDims) = loadVideo("%s/%i.ogg"%(foldername, i))
         XOrig = XOrig[0:-30, :] #Cut out number at the end
-        (PScores, QPScores) = processVideo(XOrig, FrameDims, -1, BlockHop, win, dim, "%s/%iResults"%(foldername, i))
+        (PScores, MPScores, QPScores, LScores) = processVideo(XOrig, FrameDims, -1, BlockHop, win, dim, "%s/%iResults"%(foldername, i))
         scores.append(PScores[0])
         r = getCutlerDavisLatticeScore(XOrig)
+        plt.clf()
+        clarity.append(getClarity(XOrig))
+        plt.savefig("%s/%i_Clarity.svg"%(foldername, i), bbox_inches='tight')
         s = r['score']
         plt.clf()
         plt.subplot(121)
@@ -41,18 +63,21 @@ if __name__ == "__main__":
         scoresCD.append(s)
     scores = np.array(scores)
     scoresCD = np.array(scoresCD)
+    clarity = np.array(clarity)
 
     #Output results in HTML format in descending order of maximum persistence
     fout = open("%s/index.html"%foldername, "w")
     fout.write("<html><body><table border = '1'>")
     idx = np.argsort(-scores)
     idx2 = np.argsort(scoresCD)
+    idx3 = np.argsort(-clarity)
     count = 1
     for i in idx:
-        fout.write("<tr><td><h2>%i</h2>%i.ogg<BR><BR>Maximum Persistence = <BR><b>%g</b><BR><BR>Kurtosis = <BR><b>%g</b></td>"%(count, i, scores[i], scoresCD[i]))
+        fout.write("<tr><td><h2>%i</h2>%i.ogg<BR><BR>Maximum Persistence = <BR><b>%g</b><BR><BR>Kurtosis = <BR><b>%g</b><BR>Clarity = <b>%g</b></td>"%(count, i, scores[i], scoresCD[i], clarity[i]))
         fout.write("<td><video controls><source src=\"%iResults_max.ogg\" type=\"video/ogg\">Your browser does not support the video tag.</video>"%i)
         fout.write("<td><img src = \"%iResults_Stats.svg\"></td>"%i)
         fout.write("<td><img src = \"%i_StatsCD.svg\"></td>"%i)
+        fout.write("<td><img src = \"%i_Clarity.svg\"></td>"%i)
         fout.write("</tr>\n")
         count += 1
     fout.write("</table></body></html>")
@@ -62,3 +87,4 @@ if __name__ == "__main__":
 
     saveRankings(idx, "%s/TDARankings.mat"%foldername)
     saveRankings(idx2, "%s/CutlerDavisRankings.mat"%foldername)
+    saveRankings(idx3, "%s/ClarityRankings.mat"%foldername)
