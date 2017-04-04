@@ -127,7 +127,7 @@ def processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, d
 
         [I1Z2, I1Z3, I2] = [np.array([[0, 0]]), np.array([[0, 0]]), np.array([[0, 0]])]
         #PDs2 = doRipsFiltration(XS, 2, coeff=2)
-        PDs3 = doRipsFiltration(XS, 1, coeff=3)
+        PDs3 = doRipsFiltration(XS, 2, coeff=3)
         PDs2 = PDs3
         if len(PDs2) > 1:
             I1Z2 = PDs2[1]
@@ -235,7 +235,7 @@ def plotROC(psTrue, psFalse, filename):
     plt.savefig("Hists_ROC%s.svg"%filename, bbox_inches='tight')
 
 if __name__ == '__main__':
-    BlockLen = 150
+    BlockLen = 300
     BlockHop = 10
     win = 30
     dim = 40

@@ -512,5 +512,6 @@ if __name__ == '__main__2':
         saveVideo(IRet, IDimsRet, "VideoCorrupted%.2g.ogg"%lam)
 
 if __name__ == '__main__':
-    (I, IDims) = make2ShakingCircles(400, T1 = 10, T2 = 10*np.pi/3, A1 = 20, A2 = 20, ydim = 160)
-    saveVideo(I, IDims, "QuasiperiodicCircles.ogg")
+    #(I, IDims) = make2ShakingPulses(400, T1 = 10, T2 = 10*np.pi/3, A1 = 20, A2 = 20, ydim = 160)
+    (I, IDims) = make2GaussianPulses(400, T1 = 10, T2 = 10*np.pi/3, ydim = 160)
+    saveVideo(I, IDims, "QuasiperiodicPulses.ogg")
