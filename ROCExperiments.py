@@ -241,8 +241,11 @@ if __name__ == '__main__':
     dim = 40
     NRandDraws = 600
 
+    files = {'quasiperiodicP':'Videos/QuasiperiodicPulses.ogg'}
+    """
     #files = {'quasiperiodic':'Videos/QuasiperiodicCircles.ogg',
     files = {'pendulum':'Videos/pendulum.avi', 'explosions':'Videos/explosions.mp4', 'heartbeat':'Videos/heartcrop.avi', 'birdflapping':'Videos/BirdFlapping.avi', 'driving':"Videos/drivingscene.mp4"}
+    """
 
     params = [{'Noise':0, 'BlurExtent':0, 'ByteError':0}]
     for Noise in [1, 2, 3]:
