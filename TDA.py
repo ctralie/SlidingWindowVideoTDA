@@ -1,6 +1,7 @@
-#Programmer: Chris Tralie
-#Purpose: To wrap around Ripser to compute persistence diagrams and
-#Dionysus for computing bottleneck distance
+"""
+Programmer: Chris Tralie (ctralie@alumni.princeton.edu)
+Purpose: To wrap around Ripser to compute persistence diagrams
+"""
 import subprocess
 import os
 import numpy as np
@@ -15,16 +16,16 @@ def plotDGM(dgm, color = 'b', sz = 20, label = 'dgm', axcolor = np.array([0.0, 0
     axMin = np.min(dgm)
     axMax = np.max(dgm)
     axRange = axMax-axMin
+    a = max(axMin - axRange/5, 0)
+    b = axMax+axRange/5
     # plot line
-    plt.plot([axMin-axRange/5,axMax+axRange/5], [axMin-axRange/5, axMax+axRange/5], c = axcolor, label = 'none')
+    plt.plot([a, b], [a, b], c = axcolor, label = 'none')
     plt.hold(True)
     # plot points
     if marker:
         H = plt.scatter(dgm[:, 0], dgm[:, 1], sz, color, marker, label=label, edgecolor = 'none')
     else:
         H = plt.scatter(dgm[:, 0], dgm[:, 1], sz, color, label=label, edgecolor = 'none')
-    # adjust axis
-    #plt.axis([axMin-axRange/5,axMax+axRange/5, axMin-axRange/5, axMax+axRange/5])
     # add labels
     plt.xlabel('Time of Birth')
     plt.ylabel('Time of Death')
@@ -74,7 +75,6 @@ def getBottleneckDist(PD1, PD2):
     proc = subprocess.Popen(["./bottleneck", "PD1.txt", "PD2.txt"], stdout=subprocess.PIPE)
     return float(proc.stdout.readline())
 
-
 def doRipsFiltrationDM(D, maxHomDim, thresh = -1, coeff = 2):
     N = D.shape[0]
     #Step 1: Extract and output lower triangular distance matrix
@@ -100,23 +100,26 @@ def doRipsFiltrationDM(D, maxHomDim, thresh = -1, coeff = 2):
             break
         if output:
             s = output.strip()
-            if output[0:4] == "dist":
+            if output[0:4] == b"dist":
                 continue
-            elif output[0:4] == "valu":
+            elif output[0:4] == b"valu":
                 continue
-            elif output[0:4] == "pers":
+            elif output[0:4] == b"pers":
                 if len(PDs) > 0:
                     PDs[-1] = np.array(PDs[-1])
                 PDs.append([])
             else:
+                s = s.replace("[", "")
+                s = s.replace("]", "")
+                s = s.replace("(", "")
+                s = s.replace(")", "")
+                s = s.replace(" ", "")
                 fields = s.split(",")
-                b = float(fields[0][1::])
-                d = 0
-                if len(fields[1]) > 2:
-                    d = float(fields[1][0:-1])
-                    PDs[-1].append([b, d])
-                else:
-                    PDs[-1].append([b, -1]) #By default -1 is infinite death time
+                b = float(fields[0])
+                d = -1
+                if len(fields[1]) > 0:
+                    d = float(fields[1])
+                PDs[-1].append([b, d])
         rc = proc.poll()
     PDs[-1] = np.array(PDs[-1])
     return PDs
