@@ -12,10 +12,11 @@ if __name__ == "__main__":
     RClarity = sio.loadmat("ClarityRankings.mat")['R']
     
     Rs = {'RTurk':RTurk, 'RTDAZ2':RTDAZ2, 'RTDAZ3':RTDAZ3, 'RCutlerDavisFreq':RCutlerDavisFreq, 'RCutlerDavisLattice':RCutlerDavisLattice, 'RClarity':RClarity}
+    RNames = ['RTurk', 'RTDAZ2', 'RTDAZ3', 'RCutlerDavisFreq', 'RCutlerDavisLattice', 'RClarity']
     orders = {}
     fout = open("results.html", "w")
     fout.write("<h1>Orders</h1>\n<table>")
-    for RName in Rs:
+    for RName in RNames:
         R = Rs[RName]
         N = R.shape[0]
         (s, I, H) = doHodge(R[:, 0:2], np.ones(N), R[:, 2].flatten(), verbose = True)
@@ -23,25 +24,23 @@ if __name__ == "__main__":
         fout.write("<tr><td>%s</td><td>%s</td></tr>"%(RName, orders[RName]))
     fout.write("</table><BR><BR>")
     
-    keys = ['RTDAZ2', 'RTDAZ3', 'RCutlerDavisFreq', 'RCutlerDavisLattice', 'RTurk', 'RClarity']
-    
     DsKT = np.zeros((len(Rs), len(Rs)))
     DsJW = np.zeros((len(Rs), len(Rs)))
     for i in range(len(Rs)):
-        r1 = orders[keys[i]]
+        r1 = orders[RNames[i]]
         for j in range(len(Rs)):
-            r2 = orders[keys[j]]
+            r2 = orders[RNames[j]]
             DsKT[i, j] = getKendallTau(r1, r2)
             DsJW[i, j] = getJWDistance(r1, r2)
     
     fout.write("<h1>Kendall Tau</h1>")
     fout.write("<table border = \"1\" cellpadding = \"5\">")
     fout.write("<tr><td></td>")
-    for k in keys:
+    for k in RNames:
         fout.write("<td>%s</td>"%k)
     fout.write("</tr>")
     for i in range(len(Rs)):
-        fout.write("<tr><td>%s</td>"%keys[i])
+        fout.write("<tr><td>%s</td>"%RNames[i])
         for j in range(len(Rs)):
             fout.write("<td>%.3g</td>"%DsKT[i, j])
         fout.write("</tr>\n")
@@ -51,11 +50,11 @@ if __name__ == "__main__":
     fout.write("<BR><BR><h1>Jaro Winkler</h1>")
     fout.write("<table border = \"1\" cellpadding = \"5\">")
     fout.write("<tr><td></td>")
-    for k in keys:
+    for k in RNames:
         fout.write("<td>%s</td>"%k)
     fout.write("</tr>")
     for i in range(len(Rs)):
-        fout.write("<tr><td>%s</td>"%keys[i])
+        fout.write("<tr><td>%s</td>"%RNames[i])
         for j in range(len(Rs)):
             fout.write("<td>%.3g</td>"%DsJW[i, j])
         fout.write("</tr>\n")
