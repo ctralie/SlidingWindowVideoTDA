@@ -4,8 +4,6 @@ to compare with TDA
 """
 import numpy as np
 import sys
-sys.path.append("GeometricCoverSongs")
-sys.path.append("GeometricCoverSongs/SequenceAlignment")
 from CSMSSMTools import *
 import scipy.stats
 import scipy.signal

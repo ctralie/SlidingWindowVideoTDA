@@ -3,8 +3,6 @@ from ROCExperiments import *
 from VideoTools import *
 from AlternativePeriodicityScoring import *
 import sys
-sys.path.append("GeometricCoverSongs")
-sys.path.append("GeometricCoverSongs/SequenceAlignment")
 from SpectralMethods import *
 from CSMSSMTools import *
 from FundamentalFreq import *
