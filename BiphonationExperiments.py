@@ -28,7 +28,7 @@ def printMaxPersistences(PD, num):
     idx = np.argsort(PD[:, 0] - PD[:, 1])
     P = PD[idx, 1] - PD[idx, 0]
     N = min(num, len(idx))
-    print P[0:N]
+    print(P[0:N])
 
 def fundamentalFreqEstimation(X):
     #Do Diffusion Maps
@@ -37,24 +37,24 @@ def fundamentalFreqEstimation(X):
     x = XDiffused[:, -2] #Get the mode corresponding to the largest eigenvalue
     x = x - np.mean(x)
     (maxT, corr) = estimateFundamentalFreq(x)
-    return (x, maxT, corr)    
+    return (x, maxT, corr)
 
 def doSlidingWindowVideo(XOrig, dim, desiredSamples, name, diffusionParams = None, derivWin = -1):
     X = getPCAVideo(XOrig)
-    print X.shape
+    print(X.shape)
     print("Finished PCA")
     if derivWin > 0:
         [X, validIdx] = getTimeDerivative(X, derivWin)
-    
+
     #Do fundmental frequency estimation
     (x, maxT, corr) = fundamentalFreqEstimation(X)
-    #Choose sliding window parameters 
+    #Choose sliding window parameters
     Tau = maxT/float(dim)
     #Shoot for a point cloud with about 600 points
     M = X.shape[0] - maxT + 1
     dT = M/float(desiredSamples)
-    print "Tau = %g, dT = %g"%(Tau, dT)
-    
+    print("Tau = %g, dT = %g"%(Tau, dT))
+
     XS = getSlidingWindowVideo(X, dim, Tau, dT)
 
     #Mean-center and normalize sliding window
@@ -64,10 +64,10 @@ def doSlidingWindowVideo(XOrig, dim, desiredSamples, name, diffusionParams = Non
     #Compute SSM
     D = getSSM(XS)
 
-    print "Getting persistence diagrams, N = %i,..."%D.shape[0]
+    print("Getting persistence diagrams, N = %i,..."%D.shape[0])
     PDs2 = doRipsFiltrationDM(D, 1, coeff=2)
     PDs3 = doRipsFiltrationDM(D, 2, coeff=3)
-    print "Finish getting persistence diagrams"
+    print("Finish getting persistence diagrams")
 
     plt.clf()
     plt.figure(figsize=(10, 10))
@@ -102,7 +102,7 @@ def doSlidingWindowVideo(XOrig, dim, desiredSamples, name, diffusionParams = Non
     plt.xlim([0, np.max(PDs3[1])*1.2])
     plt.ylim([0, np.max(PDs3[1])*1.2])
     plt.title("Persistence Diagrams $\mathbb{Z}2$")
-    
+
     plt.subplot(224)
     H1 = plotDGM(PDs3[1], color = np.array([1.0, 0.0, 0.2]), label = 'H1', sz = 50, axcolor = np.array([0.8]*3))
     plt.hold(True)
@@ -111,10 +111,10 @@ def doSlidingWindowVideo(XOrig, dim, desiredSamples, name, diffusionParams = Non
     plt.xlim([0, np.max(PDs3[1])*1.2])
     plt.ylim([0, np.max(PDs3[1])*1.2])
     plt.title("Persistence Diagrams $\mathbb{Z}3$")
-    
+
     plt.savefig("VocalCordsResults/%s.svg"%name, bbox_inches='tight')
-    
-    
+
+
     plt.clf()
     plt.figure(figsize=(16, 7))
     plt.subplot(211)
@@ -134,8 +134,8 @@ def doSlidingWindowVideo(XOrig, dim, desiredSamples, name, diffusionParams = Non
     #plt.plot(Y[:, 0])
     #plt.title("First PC Sliding Window Video")
     plt.savefig("VocalCordsResults/%sAutocorrelation.svg"%name, bbox_inches='tight')
-    
-    return (XS, PDs2[1], PDs3[1], PDs3[2], maxT, Tau, dT)  
+
+    return (XS, PDs2[1], PDs3[1], PDs3[2], maxT, Tau, dT)
 
 if __name__ == "__main__":
     gradSigma = 1
@@ -148,10 +148,10 @@ if __name__ == "__main__":
     #############################################
     #Christan Herbst Periodic
     Videos.append({'file':'VocalCordsVideos/Phasegram_Periodic.mp4', 'name':'HerbstPeriodic', 'startframe':0, 'endframe':-1, 'derivWin':5, 'diffusionParams':None})
-    
+
     #MSU Glottis Normal Periodic
     Videos.append({'file':'VocalCordsVideos/NormalPeriodicCrop.ogg', 'name':'NormalPeriodic', 'startframe':0, 'endframe':-1, 'derivWin':5, 'diffusionParams':None})
-    
+
     #############################################
     ###     Quasiperiodic Videos
     #############################################
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     #############################################
     #MSU Glottis Mucus Periodic Perturbed
     Videos.append({'file':'VocalCordsVideos/LTR_BO_MucusPertCrop.avi', 'name':'MucusPerturbedPeriodic', 'startframe':0, 'endframe':-1, 'derivWin':5, 'diffusionParams':None})
-    
+
     #Christian Herbst Irregular
     Videos.append({'file':'VocalCordsVideos/Phasegram_Irregular.mp4', 'name':'HerbstIrregular', 'startframe':0, 'endframe':600, 'derivWin':5, 'diffusionParams':None})
 
@@ -184,7 +184,7 @@ if __name__ == "__main__":
         i2 = V['endframe']
         (I, IDims) = loadVideo(V['file'])
         I = I[i1:i2, :]
-        print "Doing %s..."%name
+        print("Doing %s..."%name)
         sys.stdout.flush()
 
         #Do straight up video

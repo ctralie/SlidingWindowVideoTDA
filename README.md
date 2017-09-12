@@ -30,7 +30,8 @@ make ripser-coeff
 * FundamentalFreq.py: Tools for computing the fundamental frequency using normalized autocorrelation of diffusion maps
 * SpectralMethods.py: Contains code for computing diffusion maps
 * CSMSSMTools.py: Contains code for computing fast all pairs self-similarity and affinity matrices
-* TDA.py: A wrapper around the [ripser] library for computing persistence diagrams of Vietoris Rips filtrations, along with some plotting tools 
+* TDA.py: A wrapper around the [ripser] library for computing persistence diagrams of Vietoris Rips filtrations
+* TDAPlotting.py: Plotting tools for persistence diagrams 
 * GeometryTools.py: Implements mean shift (currently disabled)
 * AlternativePeriodicityScoring.py: Our implementations of alternative methods for computing periodicity in the literature
 * SyntheticCurves.py: Code for synthesizing blur motion trajectories

@@ -10,16 +10,16 @@ def estimateFundamentalFreq(x, doPlot = False):
     #Step 1: Compute normalized squared difference function
     #Using variable names in the paper
     N = x.size
-    W = int(N/2)
+    W = np.int(N/2)
     t = W
     corr = np.zeros(W)
     #Do brute force f FFT because I'm lazy
     #(fine because signals are small)
-    for Tau in range(W):
+    for Tau in np.arange(W):
         xdelay = x[Tau::]
         L = (W - Tau)/2
-        m = np.sum(x[t-L:t+L+1]**2) + np.sum(xdelay[t-L:t+L+1]**2)
-        r = np.sum(x[t-L:t+L+1]*xdelay[t-L:t+L+1])
+        m = np.sum(x[int(t-L):int(t+L+1)]**2) + np.sum(xdelay[int(t-L):int(t+L+1)]**2)
+        r = np.sum(x[int(t-L):int(t+L+1)]*xdelay[int(t-L):int(t+L+1)])
         corr[Tau] = 2*r/m
 
     #Step 2: Find the ''key max''

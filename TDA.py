@@ -7,93 +7,56 @@ import os
 import numpy as np
 import time
 import matplotlib.pyplot as plt
+from TDAPlotting import *
 
-def plotDGM(dgm, color = 'b', sz = 20, label = 'dgm', axcolor = np.array([0.0, 0.0, 0.0]), marker = None):
-    if dgm.size == 0:
-        return
-    # Create Lists
-    # set axis values
-    axMin = np.min(dgm)
-    axMax = np.max(dgm)
-    axRange = axMax-axMin
-    a = max(axMin - axRange/5, 0)
-    b = axMax+axRange/5
-    # plot line
-    plt.plot([a, b], [a, b], c = axcolor, label = 'none')
-    plt.hold(True)
-    # plot points
-    if marker:
-        H = plt.scatter(dgm[:, 0], dgm[:, 1], sz, color, marker, label=label, edgecolor = 'none')
-    else:
-        H = plt.scatter(dgm[:, 0], dgm[:, 1], sz, color, label=label, edgecolor = 'none')
-    # add labels
-    plt.xlabel('Time of Birth')
-    plt.ylabel('Time of Death')
-    return H
+def parseCocycle(s):
+    s2 = "" + s
+    for c in ["]", "[", ",", "{", "}"]:
+        s2 = s2.replace(c, "")
+    s2 = s2.replace(":", " ")
+    cocycle = [int(c) for c in s2.split()]
+    cocycle = np.array(cocycle)
+    cocycle = np.reshape(cocycle, [len(cocycle)/3, 3])
+    return cocycle
 
-def plotDGMAx(ax, dgm, color = 'b', sz = 20, label = 'dgm'):
-    if dgm.size == 0:
-        return
-    axMin = np.min(dgm)
-    axMax = np.max(dgm)
-    axRange = axMax-axMin;
-    ax.scatter(dgm[:, 0], dgm[:, 1], sz, color,label=label)
-    ax.hold(True)
-    ax.plot([axMin-axRange/5,axMax+axRange/5], [axMin-axRange/5, axMax+axRange/5],'k');
-    ax.set_xlabel('Time of Birth')
-    ax.set_ylabel('Time of Death')
+def doRipsFiltrationDM(D, maxHomDim, thresh = -1, coeff = 2, getCocycles = False):
+    """
+    Wrapper around Uli Bauer's Ripser code
+    :param D: An NxN pairwise distance matrix
+    :param maxHomDim: The dimension up to which to compute persistent homology
+    :param thresh: Threshold up to which to add edges.  If not specified, add all
+        edges up to the full clique
+    :param coeff: A prime to use as the field coefficients for the PH computation
+    :param getCocycles: True if cocycles should be computed and returned
 
-def plot2DGMs(P1, P2, l1 = 'Diagram 1', l2 = 'Diagram 2'):
-    plotDGM(P1, 'r', 10, label = l1)
-    plt.hold(True)
-    plt.plot(P2[:, 0], P2[:, 1], 'bx', label = l2)
-    plt.legend()
-    plt.xlabel("Birth Time")
-    plt.ylabel("Death Time")
-
-def savePD(filename, I):
-    if os.path.exists(filename):
-        os.remove(filename)
-    fout = open(filename, "w")
-    for i in range(I.shape[0]):
-        fout.write("%g %g"%(I[i, 0], I[i, 1]))
-        if i < I.shape[0]-1:
-            fout.write("\n")
-    fout.close()
-
-#Wrap around Dionysus's bottleneck distance after taking the log
-def getInterleavingDist(PD1, PD2):
-    savePD("PD1.txt", np.log(PD1))
-    savePD("PD2.txt", np.log(PD2))
-    proc = subprocess.Popen(["./bottleneck", "PD1.txt", "PD2.txt"], stdout=subprocess.PIPE)
-    lnd = float(proc.stdout.readline())
-    return np.exp(lnd) - 1.0 #Interleaving dist is 1 + eps
-
-def getBottleneckDist(PD1, PD2):
-    savePD("PD1.txt", PD1)
-    savePD("PD2.txt", PD2)
-    proc = subprocess.Popen(["./bottleneck", "PD1.txt", "PD2.txt"], stdout=subprocess.PIPE)
-    return float(proc.stdout.readline())
-
-def doRipsFiltrationDM(D, maxHomDim, thresh = -1, coeff = 2):
+    :return: PDs (array of all persistence diagrams from 0D up to maxHomDim).
+        Each persistence diagram is a numpy array
+        OR
+        tuple (PDs, Cocycles) if returning cocycles
+    """
     N = D.shape[0]
-    #Step 1: Extract and output lower triangular distance matrix
-    fout = open("DLower.txt", "w")
-    for i in range(1, N):
-        for j in range(0, i):
+    #Step 1: Extract and output distance matrix
+    fout = open("D.txt", "w")
+    for i in range(0, N):
+        for j in range(0, N):
             fout.write("%g "%D[i, j])
+        if i < N-1:
+            fout.write("\n")
     fout.close()
 
     #Step 2: Call ripser
     callThresh = 2*np.max(D)
     if thresh > 0:
         callThresh = thresh
-    if coeff > 2:
-        proc = subprocess.Popen(["ripser/ripser-coeff", "--dim", "%i"%maxHomDim, "--threshold", "%g"%callThresh, "--modulus", "%i"%coeff, "DLower.txt"], stdout=subprocess.PIPE)
+    if getCocycles:
+        proc = subprocess.Popen(["ripser/ripser-representatives", "--format", "distance", "--dim", "%i"%maxHomDim, "--threshold", "%g"%callThresh, "--modulus", "%i"%coeff, "D.txt"], stdout=subprocess.PIPE)
+    elif coeff > 2:
+        proc = subprocess.Popen(["ripser/ripser-coeff", "--dim", "%i"%maxHomDim, "--threshold", "%g"%callThresh, "--modulus", "%i"%coeff, "D.txt"], stdout=subprocess.PIPE)
     else:
-        proc = subprocess.Popen(["ripser/ripser", "--dim", "%i"%maxHomDim, "--threshold", "%g"%callThresh, "DLower.txt"], stdout=subprocess.PIPE)
+        proc = subprocess.Popen(["ripser/ripser", "--dim", "%i"%maxHomDim, "--threshold", "%g"%callThresh, "D.txt"], stdout=subprocess.PIPE)
     #stdout = proc.communicate()[0]
     PDs = []
+    AllCocycles = []
     while True:
         output=proc.stdout.readline()
         if (output == b'' or output == '') and proc.poll() is not None:
@@ -108,13 +71,22 @@ def doRipsFiltrationDM(D, maxHomDim, thresh = -1, coeff = 2):
                 if len(PDs) > 0:
                     PDs[-1] = np.array(PDs[-1])
                 PDs.append([])
+                AllCocycles.append([])
             else:
-                s = s.replace("[", "")
-                s = s.replace("]", "")
-                s = s.replace("(", "")
-                s = s.replace(")", "")
-                s = s.replace(" ", "")
-                fields = s.split(",")
+                if getCocycles:
+                    s = s.split(": ")
+                    if len(s) > 1:
+                        [s, s1] = s
+                        c = parseCocycle(s1)
+                        AllCocycles[-1].append(c)
+                    else:
+                        s = s[0]
+                s = s.replace(b"[", b"")
+                s = s.replace(b"]", b"")
+                s = s.replace(b"(", b"")
+                s = s.replace(b")", b"")
+                s = s.replace(b" ", b"")
+                fields = s.split(b",")
                 b = float(fields[0])
                 d = -1
                 if len(fields[1]) > 0:
@@ -122,23 +94,39 @@ def doRipsFiltrationDM(D, maxHomDim, thresh = -1, coeff = 2):
                 PDs[-1].append([b, d])
         rc = proc.poll()
     PDs[-1] = np.array(PDs[-1])
+    if getCocycles:
+        return (PDs, AllCocycles)
     return PDs
 
-#Wrapper around Uli Bauer's ripser code
-def doRipsFiltration(X, maxHomDim, thresh = -1, coeff = 2):
-    #Compute all pairwise distances assuming Euclidean
+def getSSM(X):
     XSqr = np.sum(X**2, 1)
     D = XSqr[:, None] + XSqr[None, :] - 2*X.dot(X.T)
     D[D < 0] = 0 #Numerical precision
     D = np.sqrt(D)
-    return doRipsFiltrationDM(D, maxHomDim, thresh, coeff)
+    return D
+
+def doRipsFiltration(X, maxHomDim, thresh = -1, coeff = 2, getCocycles = False):
+    """
+    Run ripser assuming Euclidean distance of a point cloud X
+    :param X: An N x d dimensional point cloud
+    :param maxHomDim: The dimension up to which to compute persistent homology
+    :param thresh: Threshold up to which to add edges.  If not specified, add all
+        edges up to the full clique
+    :param coeff: A prime to use as the field coefficients for the PH computation
+    :param getCocycles: True if cocycles should be computed and returned
+
+    :return: PDs (array of all persistence diagrams from 0D up to maxHomDim).
+        Each persistence diagram is a numpy array
+        OR
+        tuple (PDs, Cocycles) if returning cocycles
+    """
+    D = getSSM(X)
+    return doRipsFiltrationDM(D, maxHomDim, thresh, coeff, getCocycles)
 
 if __name__ == '__main__':
     np.random.seed(10)
     X = np.random.randn(200, 2)
     X = X/np.sqrt(np.sum(X**2, 1)[:, None])
-    #plt.plot(X[:, 0], X[:, 1], '.')
-    #plt.show()
     PDs = doRipsFiltration(X, 1, coeff = 3)
     plotDGM(PDs[1])
     plt.show()

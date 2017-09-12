@@ -9,10 +9,10 @@ def printConsistencyRatios(Y, I, H, W):
     a = (normD0s/normY)**2
     b = (normI/normY)**2
     c = (normH/normY)**2
-    print "|D0s/Y| = ", a
-    print "Local Inconsistency = ", b
-    print "Global Inconsistency = ", c
-    print "a + b + c = ", a + b + c    
+    print("|D0s/Y| = %g"%a)
+    print("Local Inconsistency = %g"%b)
+    print("Global Inconsistency = %g"%c)
+    print("a + b + c = %g"%(a + b + c))    
 
 #Do an experiment comparing binary weights on a total order
 #to real weights
@@ -70,7 +70,7 @@ def doRandomFlipExperimentsVaryPercent(N, AllPercentFlips, NTrials):
     INorm = np.zeros((M, NTrials))
     HNorm = np.zeros((M, NTrials))
     for i in range(M):
-        print "%i of %i"%(i, M)
+        print("%i of %i"%(i, M))
         for k in range(NTrials):
             [INorm[i, k], HNorm[i, k]] = doRandomFlipExperiment(N, AllPercentFlips[i])
     INorm = np.mean(INorm, 1)
@@ -107,7 +107,7 @@ def doBatchExperiments(N, omissions, flips, NTrials = 10):
             om = omissions[i]
             NEdges = int(len(I)*(1-om))
             for j in range(len(flips)):
-                print "Doing trial %i of %i, omission %i of %i, flip %i of %i"%(t, NTrials, i, len(omissions), j, len(flips))
+                print("Doing trial %i of %i, omission %i of %i, flip %i of %i"%(t, NTrials, i, len(omissions), j, len(flips)))
                 
                 R = np.zeros((NEdges, 2))
                 idx = np.random.permutation(len(I))[0:NEdges]
@@ -127,7 +127,7 @@ def doBatchExperiments(N, omissions, flips, NTrials = 10):
         KTScores = scoreBatchRankings(Rankings)
         sio.savemat("BatchResults.mat", {"Rankings":Rankings, "INorms":INorms, "HNorms":HNorms, "omissions":omissions, "flips":flips, "KTScores":KTScores})
 
-if __name__ == '__main__':
+if __name__ == '__main__2':
     np.random.seed(100)
     N = 600
     omissions = np.linspace(0.9, 0.99, 10)
@@ -141,13 +141,13 @@ if __name__ == '__main__2':
     N = 20
     doRandomFlipExperimentsVaryPercent(N, np.linspace(0, 1, 100), 50)
 
-if __name__ == '__main__2':
+if __name__ == '__main__':
     np.random.seed(17)
     R = sio.loadmat('R.mat')['R']
     [R, Y] = [R[:, 0:2], R[:, 2]]
     W = np.random.rand(len(Y))
     #W = np.ones(len(Y))
     (s, I, H) = doHodge(R, W, Y)
-    print np.argsort(s)
+    print(np.argsort(s))
     
     printConsistencyRatios(Y, I, H, W)

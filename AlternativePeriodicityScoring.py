@@ -3,8 +3,10 @@ Purpose: To implement some alternative techniques for periodicity quantification
 to compare with TDA
 """
 import numpy as np
+import scipy.io as sio
 import sys
 from CSMSSMTools import *
+from VideoTools import *
 import scipy.stats
 import scipy.signal
 import scipy.ndimage
@@ -202,12 +204,55 @@ def getCutlerDavisLatticeScore(I, doPlot = False):
             mind = d
     return {'score':minscore, 'D':D, 'Q':minQ, 'd':mind, 'L':L, 'offset':offset, 'JJ':JJ, 'II':II, 'CSmooth':CSmooth}
 
+def getD2ChiSquareScore(I, win, dim, derivWin = -1, NBins = 50):
+    print("Doing PCA...")
+    X = getPCAVideo(I)
+    print("Finished PCA")
+    if derivWin > 0:
+        [X, validIdx] = getTimeDerivative(X, derivWin)
+    Tau = win/float(dim-1)
+    N = X.shape[0]
+    dT = (N-dim*Tau)/float(N)
+    XS = getSlidingWindowVideo(X, dim, Tau, dT)
+
+    #Mean-center and normalize sliding window
+    XS = XS - np.mean(XS, 0)[None, :]
+    #XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
+    D = getCSM(XS, XS)
+    D = D/np.max(D)
+    N = D.shape[0]
+    
+    #Compute target distribution
+    #TODO: Closed form equation for this
+    M = N*10
+    X = np.zeros((M, 2))
+    X[:, 0] = 0.5*np.cos(2*np.pi*np.arange(M)/M)
+    X[:, 1] = 0.5*np.sin(2*np.pi*np.arange(M)/M)
+    DGT = getCSM(X, X)
+    [I, J] = np.meshgrid(np.arange(M), np.arange(M))
+    (hGT, edges) = np.histogram(DGT[I > J], bins=50)
+    hGT = 1.0*hGT/np.sum(hGT)
+    
+    #Compute this distribution
+    [I, J] = np.meshgrid(np.arange(N), np.arange(N))
+    (h, edges) = np.histogram(D[I > J], bins = 50)
+    h = 1.0*h/np.sum(h)
+    
+    #Compute chi squared distance
+    num = (h - hGT)**2
+    denom = h + hGT
+    num[denom <= 0] = 0
+    denom[denom <= 0] = 1
+    d = np.sum(num / denom)
+    
+    return {'score':d, 'h':h, 'hGT':hGT, 'DGT':DGT, 'D':D}
+
 if __name__ == '__main__':
     np.random.seed(10)
     plt.figure(figsize=(12, 6))
     N = 20
     NPeriods = 10
-    t = np.linspace(-1, 1, N+1)[0:N]**3
+    t = np.linspace(-1, 1, N+1)[0:N]#**3
     t = 0.5*t/max(np.abs(t)) + 0.5
     t = 2*np.pi*t
     #t = np.linspace(0, 5*2*np.pi, N)
@@ -215,8 +260,10 @@ if __name__ == '__main__':
     for i in range(NPeriods):
         X[i*N:(i+1)*N, 0] = np.cos(t)
         X[i*N:(i+1)*N, 1] = np.sin(t)
-    X = X + 0.2*np.random.randn(N*NPeriods, 2)
+    X = X + 3*np.random.randn(N*NPeriods, 2)
     #X = np.random.randn(N*NPeriods, 2)
+    X = np.zeros((N*NPeriods, 20))
+    X[:, 1] = np.arange(X.shape[0])
     r = getCutlerDavisLatticeScore(X)
 
     #Plot results
@@ -230,3 +277,9 @@ if __name__ == '__main__':
     plt.subplot(133)
     checkLattice(r['Q'], r['JJ'], r['II'], r['L'], r['d'], r['offset'], r['CSmooth'], doPlot = True)
     plt.savefig("Lattice.svg", bbox_inches = 'tight')
+    
+    r = getD2ChiSquareScore(X, 20, 20)
+    plt.figure(figsize=(10, 6))
+    plt.plot(r['hGT'], 'k')
+    plt.plot(r['h'], 'b')
+    plt.savefig("D2.svg", bbox_inches = 'tight')

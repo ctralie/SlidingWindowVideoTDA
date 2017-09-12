@@ -10,12 +10,12 @@ MINWIDTH = 120
 
 def saveVideoID(I, IDims, fileprefix, ID, FrameRate = 30, NumberFrames = 30):
     N = I.shape[0]
-    print I.shape
+    print(I.shape)
     if I.shape[0] > FrameRate*5:
         I = I[0:FrameRate*5, :]
         N = I.shape[0]
     frame = np.array([])
-    print "IDims = ", IDims
+    print("IDims = ", IDims)
     for i in range(N):
         frame = np.reshape(I[i, :], IDims)
         frame[frame < 0] = 0
@@ -25,7 +25,7 @@ def saveVideoID(I, IDims, fileprefix, ID, FrameRate = 30, NumberFrames = 30):
             fac2 = MINWIDTH/float(IDims[1])
             fac = max(fac1, fac2)
             if i == 0:
-                print "Resizing by %g"%fac
+                print("Resizing by %g"%fac)
             frame = scipy.misc.imresize(frame, fac)
         mpimage.imsave("%s%i.png"%(TEMP_STR, i+1), frame)
     PS = 60
@@ -33,9 +33,9 @@ def saveVideoID(I, IDims, fileprefix, ID, FrameRate = 30, NumberFrames = 30):
         PS = int(30.0*frame.shape[1]/MINWIDTH)
     for i in range(NumberFrames):
         command = ["convert", "%s%i.png"%(TEMP_STR, N), "-fill", "red", "-pointsize", "%i"%PS, "-draw", 'text 20,60 %s%.3i%s'%("'", ID, "'"), "%s%i.png"%(TEMP_STR, N+i+1)]
-        print command
+        print(command)
         subprocess.call(command)
-        print N + i + 1
+        print(N + i + 1)
     #Convert to video using avconv
     for t in ["avi", "webm", "ogg"]:
         filename = "%s.%s"%(fileprefix, t)
@@ -60,7 +60,7 @@ IDs = np.random.permutation(999)
 i = 0
 Videos = ["OrigVideos/%s"%v for v in os.listdir("OrigVideos")]
 for V in Videos:
-    print "Saving %s..."%V
+    print("Saving %s..."%V)
     (I, IDims) = loadVideo(V)
     saveVideoID(I, IDims, "NumberedVideos/%i"%i, IDs[i])
     i = i + 1

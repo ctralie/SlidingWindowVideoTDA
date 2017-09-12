@@ -5,7 +5,7 @@ from Hodge import *
 
 if __name__ == "__main__":
     foldername = "VideoMix/NumberedVideos"
-    X = sio.loadmat("TurkResults/MixRankingsScored.mat")
+    X = sio.loadmat("TurkResults/Class.mat")
     R = X['R']
     Y = R[:, 2]
     R = R[:, 0:2]
@@ -14,10 +14,10 @@ if __name__ == "__main__":
     INorm = getWNorm(I, W)
     HNorm = getWNorm(H, W)
     idx = np.argsort(s)
-    print idx
+    print(idx)
 
     #Output results in HTML format in descending order of maximum persistence
-    fout = open("%s/Turk.html"%foldername, "w")
+    fout = open("%s/ClassRankings.html"%foldername, "w")
     fout.write("<html><body>")
     fout.write("<h1>INorm = %g</h1>"%INorm)
     fout.write("<h1>HNorm = %g</h1>"%HNorm)
@@ -25,8 +25,7 @@ if __name__ == "__main__":
     count = 1
     for i in idx:
         fout.write("<tr><td><h2>%i</h2>%i.ogg<BR><BR>s = <b>%g</b></td>"%(count, i, s[i]))
-        fout.write("<td><video controls><source src=\"%iResults_max.ogg\" type=\"video/ogg\">Your browser does not support the video tag.</video>"%i)
-        fout.write("<td><img src = \"%iResults_Stats.png\"></td>"%i)
+        fout.write("<td><video controls><source src=\"%i.ogg\" type=\"video/ogg\">Your browser does not support the video tag.</video>"%i)
         fout.write("</tr>\n")
         count += 1
     fout.write("</table></body></html>")

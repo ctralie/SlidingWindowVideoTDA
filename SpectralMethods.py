@@ -73,7 +73,7 @@ if __name__ == '__main__2':
     tic = time.time()
     [SSM, _] = getSSM(X, N)
     toc = time.time()
-    print "Elapsed time SSM: ", toc - tic
+    print("Elapsed time SSM: ", toc - tic)
     Kappa = 0.02
 
     t = -1
@@ -81,7 +81,7 @@ if __name__ == '__main__2':
     tic = time.time()
     M = getDiffusionMap(SSM, Kappa, t)
     toc = time.time()
-    print "Total time diffusion: ", toc-tic
+    print("Total time diffusion: ", toc-tic)
     (SSM, _) = getSSM(M, N)
     plt.subplot(121)
     plt.plot(M[:, -3], M[:, -2], '.')
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     tic = time.time()
     [SSMOrig, _] = getSSM(X, N)
     toc = time.time()
-    print "Elapsed time SSM: ", toc - tic
+    print("Elapsed time SSM: ", toc - tic)
     Kappa = 0.1
 
     plt.figure(figsize=(12, 5))

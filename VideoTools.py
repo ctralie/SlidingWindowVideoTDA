@@ -104,7 +104,7 @@ def loadVideo(path, YCbCr = False):
 #Returns: tuple (Video NxP array, dimensions of video)
 def loadCVVideo(path, show_video=False):
     if not os.path.exists(path):
-        print "ERROR: Video path not found: %s"%path
+        print("ERROR: Video path not found: %s"%path)
         return None
     import cv2
     videoReader = cv2.VideoCapture(path)
@@ -133,7 +133,7 @@ def loadCVVideo(path, show_video=False):
 
 def loadImageIOVideo(path):
     if not os.path.exists(path):
-        print "ERROR: Video path not found: %s"%path
+        print("ERROR: Video path not found: %s"%path)
         return None
     import imageio
     videoReader = imageio.get_reader(path, 'ffmpeg')

@@ -4,7 +4,8 @@ sys.path.append("..")
 from Hodge import *
 
 if __name__ == "__main__":
-    RTurk = sio.loadmat("MixRankingsScored.mat")['R']
+    #RTurk = sio.loadmat("MixRankingsScored.mat")['R']
+    RTurk = sio.loadmat("Class.mat")['R']
     RTDAZ2 = sio.loadmat("TDARankingsMixZ2.mat")['R']
     RTDAZ3 = sio.loadmat("TDARankingsMixZ3.mat")['R']
     RCutlerDavisFreq = sio.loadmat("CutlerDavisRankingsFreqMix.mat")['R']
@@ -20,7 +21,7 @@ if __name__ == "__main__":
         R = Rs[RName]
         N = R.shape[0]
         (s, I, H) = doHodge(R[:, 0:2], np.ones(N), R[:, 2].flatten(), verbose = True)
-        orders[RName] = np.argsort(s)   
+        orders[RName] = np.argsort(s)
         fout.write("<tr><td>%s</td><td>%s</td></tr>"%(RName, orders[RName]))
     fout.write("</table><BR><BR>")
     

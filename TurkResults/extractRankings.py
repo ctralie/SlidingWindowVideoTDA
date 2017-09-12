@@ -4,7 +4,7 @@ import scipy.io as sio
 import scipy.sparse as sparse
 
 if __name__ == "__main__":
-    R1 = sio.loadmat("MixRankings.mat")["R"]
+    R1 = sio.loadmat("MixRankingsOrig.mat")["R"]
     np.random.seed(100)
     IDs = np.random.permutation(999)
     I = []
@@ -24,7 +24,7 @@ if __name__ == "__main__":
             J.append(R1[i, 1])
             V.append(-1.0)
         else:
-            print "Nonmatching number i = %i, %i (%i or %i)"%(i, R1[i, 2], id1, id2)
+            print("Nonmatching number i = %i, %i (%i or %i)"%(i, R1[i, 2], id1, id2))
     N += 1
     R = sparse.coo_matrix((V, (I, J)), shape=(N, N)).tocsr()
     R = R.toarray()

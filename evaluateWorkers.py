@@ -13,7 +13,7 @@ def getTDARankingDiff(i1, i2):
         elif TDARankings[i] == i2:
             idx2 = i
     if idx1 == idx2:
-        print "Error"
+        print("Error")
     return idx2 - idx1
 
 def writeRow(w, C, I, idx, fout):
@@ -33,7 +33,7 @@ def printWorkerWrongRankings(lines, worker):
         i2 = int(fields[2])
         ranking = int(fields[3])
         if not (getTDARanking(i1, i2) == ranking):
-            print "%i %i"%(i1, i2)
+            print("%i %i"%(i1, i2))
 
 if __name__ == '__main__':
     CORRECT = 0

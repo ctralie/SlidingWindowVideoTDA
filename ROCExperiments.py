@@ -117,11 +117,11 @@ def processVideo(XSample, FrameDims, BlockLen, BlockHop, win, dim, filePrefix, d
         XS = XS - np.mean(XS, 1)[:, None]
         XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
         if meanShiftK > 0:
-            print "Doing Mean Shift KNN, K = %i"%meanShiftK
+            print("Doing Mean Shift KNN, K = %i"%meanShiftK)
             XS = getMeanShiftKNN(XS, meanShiftK)
             XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
         if meanShiftTheta > 0:
-            print "Doing Mean Shift Theta = %g"%meanShiftTheta
+            print("Doing Mean Shift Theta = %g"%meanShiftTheta)
             XS = getMeanShift(XS, meanShiftTheta)
             XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
 
@@ -194,7 +194,7 @@ def runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, Bl
             (p, mp, qp, l) = processVideo(XSample, ThisFrameDims, BlockLen, BlockHop, win, dim, filePrefix, doSaveVideo=doSaveVideo)
         except:
             continue
-        print "PScore = %s, MPScore = %s, QPScore = %s, LScore = %s"%(p, mp, qp, l)
+        print("PScore = %s, MPScore = %s, QPScore = %s, LScore = %s"%(p, mp, qp, l))
         PScores += p
         MPScores += mp
         QPScores += qp
@@ -264,7 +264,7 @@ if __name__ == '__main__':
                 (PScores, MPScores, QPScores, LScores) = runExperiments(filename, BlockLen, BlockHop, win, dim, NRandDraws, Noise, BlurExtent, ByteError)
                 sio.savemat(foutname, {"PScores":PScores, "MPScores":MPScores, "QPScores":QPScores, "LScores":LScores})
             else:
-                print "Already computed %s, skipping..."%foutname
+                print("Already computed %s, skipping..."%foutname)
 
 if __name__ == '__main__2':
     #Playing with mean shift

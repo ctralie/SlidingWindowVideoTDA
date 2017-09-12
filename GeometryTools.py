@@ -15,7 +15,7 @@ def getMeanShift(X, theta = np.pi/16):
     XMean = np.zeros(X.shape)
     for i in range(N):
         idx = D[i, :].nonzero()[1]
-        print idx
+        print(idx)
         XMean[i, :] = np.mean(X[idx, :], 0)
     return XMean
 
@@ -27,7 +27,7 @@ def getMeanShiftKNN(X, K):
     XMean = np.zeros(X.shape)
     for i in range(N):
         idx = allidx[i, 0:K]
-        print idx
+        print(idx)
         XMean[i, :] = np.mean(X[idx, :], 0)
     return XMean
 

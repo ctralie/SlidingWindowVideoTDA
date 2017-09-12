@@ -14,9 +14,9 @@ def saveVideoID(I, IDims, fileprefix, ID, FrameRate = 30, NumberFrames = 30):
         mpimage.imsave("%s%i.png"%(TEMP_STR, i+1), frame)
     for i in range(NumberFrames):
         command = ["convert", "%s%i.png"%(TEMP_STR, N), "-fill", "red", "-pointsize", "60", "-draw", 'text 20,60 %s%.3i%s'%("'", ID, "'"), "%s%i.png"%(TEMP_STR, N+i+1)]
-        print command
+        print(command)
         subprocess.call(command)
-        print N + i + 1
+        print(N + i + 1)
     #Convert to video using avconv
     for t in ["avi", "webm", "ogg"]:
         filename = "%s.%s"%(fileprefix, t)
@@ -46,7 +46,7 @@ for d in dirs:
     for V in Videos:
         if not V[-4::] == ".avi":
             continue
-        print "Saving %s..."%V
+        print("Saving %s..."%V)
         (I, IDims) = loadVideo(V)
         I = I[0:BlockLen+10, :]
         saveVideoID(I, IDims, "Subject2/%i"%i, IDs[i])
