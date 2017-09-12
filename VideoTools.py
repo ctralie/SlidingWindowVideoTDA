@@ -12,7 +12,7 @@ import matplotlib.image as mpimage
 import scipy.misc
 import scipy.signal
 from scipy.ndimage import gaussian_gradient_magnitude
-from SyntheticCurves import * #For motion blur
+from SynthCurves import * #For motion blur
 
 #Need these for saving 3D video
 
@@ -497,8 +497,8 @@ def getGradientVideo(I, IDims, sigma = 1):
 
 if __name__ == '__main__2':
     (I, IDims) = loadVideo("VocalCordsVideos/LTR_ED_MucusBiphonCrop.avi")
-    #IBlur = simulateCameraShake(I, IDims, 40)
-    #saveVideo(IBlur, IDims, "PendulumBlur.avi")
+    IBlur = simulateCameraShake(I, IDims, 40)
+    saveVideo(IBlur, IDims, "MucusBlur.avi")
     IGradient = getGradientVideo(I, IDims, sigma=1)
     IGradient = IGradient/np.max(IGradient)
     saveVideo(IGradient, IDims, "out.avi")

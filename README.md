@@ -34,7 +34,7 @@ make ripser-coeff
 * TDAPlotting.py: Plotting tools for persistence diagrams 
 * GeometryTools.py: Implements mean shift (currently disabled)
 * AlternativePeriodicityScoring.py: Our implementations of alternative methods for computing periodicity in the literature
-* SyntheticCurves.py: Code for synthesizing blur motion trajectories
+* SynthCurves.py: Code for synthesizing blur motion trajectories
 * ROCExperiments.py: Code for running all of the ROC experiments for periodic and quasiperiodic videos under AWGN/blur/bit error noise
 * Hodge.py: An implementation of Hodge rank aggregation
 * HodgeExperiments.py: Some synthetic experiments for Hodge rank aggregation
