@@ -221,7 +221,7 @@ def getD2ChiSquareScore(I, win, dim, derivWin = -1, NBins = 50):
     D = getCSM(XS, XS)
     D = D/np.max(D)
     N = D.shape[0]
-    
+
     #Compute target distribution
     #TODO: Closed form equation for this
     M = N*10
@@ -232,38 +232,118 @@ def getD2ChiSquareScore(I, win, dim, derivWin = -1, NBins = 50):
     [I, J] = np.meshgrid(np.arange(M), np.arange(M))
     (hGT, edges) = np.histogram(DGT[I > J], bins=50)
     hGT = 1.0*hGT/np.sum(hGT)
-    
+
     #Compute this distribution
     [I, J] = np.meshgrid(np.arange(N), np.arange(N))
     (h, edges) = np.histogram(D[I > J], bins = 50)
     h = 1.0*h/np.sum(h)
-    
+
     #Compute chi squared distance
     num = (h - hGT)**2
     denom = h + hGT
     num[denom <= 0] = 0
     denom[denom <= 0] = 1
     d = np.sum(num / denom)
-    
+
     return {'score':d, 'h':h, 'hGT':hGT, 'DGT':DGT, 'D':D}
+
+def getDelaunayAreaScore(I, win, dim, derivWin = -1, doPlot = False):
+    from SpectralMethods import getDiffusionMap
+    from scipy.spatial import Delaunay
+    from GeometryTools import getMeanShiftKNN
+    print("Doing PCA...")
+    X = getPCAVideo(I)
+    print("Finished PCA")
+    if derivWin > 0:
+        [X, validIdx] = getTimeDerivative(X, derivWin)
+    Tau = win/float(dim-1)
+    N = X.shape[0]
+    dT = (N-dim*Tau)/float(N)
+    XS = getSlidingWindowVideo(X, dim, Tau, dT)
+
+    #Mean-center and normalize sliding window
+    XS = XS - np.mean(XS, 0)[None, :]
+    XS = XS/np.sqrt(np.sum(XS**2, 1))[:, None]
+    D = getCSM(XS, XS)
+
+    tic = time.time()
+    Y = getDiffusionMap(D, 0.1)
+
+    X = Y[:, [-2, -3]]
+    XMags = np.sqrt(np.sum(X**2, 1))
+    X = X/np.max(XMags)
+    X = getMeanShiftKNN(X, int(0.1*N))
+    tri = Delaunay(X)
+
+    #Compute all triangle circumcenters
+    P0 = X[tri.simplices[:, 0], :]
+    P1 = X[tri.simplices[:, 1], :]
+    P2 = X[tri.simplices[:, 2], :]
+    V1 = P1 - P0
+    V2 = P2 - P0
+    Bx = V1[:, 0]
+    By = V1[:, 1]
+    Cx = V2[:, 0]
+    Cy = V2[:, 1]
+    Dp = 2*(Bx*Cy - By*Cx)
+    Ux = (Cy*(Bx**2+By**2)-By*(Cx**2+Cy**2))/Dp
+    Uy = (Bx*(Cx**2+Cy**2)-Cx*(Bx**2+By**2))/Dp
+    Rs = np.sqrt(Ux**2 + Uy**2) #Radii of points
+    Cs = np.zeros((len(Ux), 2))
+    Cs[:, 0] = Ux
+    Cs[:, 1] = Uy
+    Cs = Cs + P0 #Add back offset
+    #Prune down to triangle circumcenters which are inside
+    #the convex hull of the points
+    idx = np.arange(Cs.shape[0])
+    idx = idx[tri.find_simplex(Cs) > -1]
+    #Find the maximum radius empty circle inside of the convex hull
+    [R, cx, cy] = [0]*3
+    if len(idx) > 0:
+        idxmax = idx[np.argmax(Rs[idx])]
+        cx = Ux[idxmax] + P0[idxmax, 0]
+        cy = Uy[idxmax] + P0[idxmax, 1]
+        R = Rs[idxmax]
+    toc = time.time()
+    print("Elapsed Time: %g"%(toc-tic))
+
+    if doPlot:
+        plt.subplot(131)
+        plt.imshow(D, cmap = 'afmhot')
+        plt.title("SSM")
+        plt.subplot(132)
+        plt.imshow(Y, aspect = 'auto', cmap = 'afmhot', interpolation = 'nearest')
+        plt.title("Diffusion Map")
+        plt.subplot(133)
+        plt.scatter(X[:, 0], X[:, 1])
+        #simplices = tri.simplices.copy()
+        #plt.triplot(X[:, 0], X[:, 1], simplices)
+        #Plot maximum circle
+        t = np.linspace(0, 2*np.pi, 100)
+        plt.scatter(cx, cy, 20, 'r')
+        plt.plot(cx + R*np.cos(t), cy + R*np.sin(t))
+        plt.axis('equal')
+        plt.title("R = %g"%R)
+        plt.xlim([-1, 1])
+        plt.ylim([-1, 1])
+
+    return R
 
 if __name__ == '__main__':
     np.random.seed(10)
     plt.figure(figsize=(12, 6))
     N = 20
-    NPeriods = 10
+    NPeriods = 20
     t = np.linspace(-1, 1, N+1)[0:N]#**3
     t = 0.5*t/max(np.abs(t)) + 0.5
     t = 2*np.pi*t
     #t = np.linspace(0, 5*2*np.pi, N)
     X = np.zeros((N*NPeriods, 2))
     for i in range(NPeriods):
-        X[i*N:(i+1)*N, 0] = np.cos(t)
-        X[i*N:(i+1)*N, 1] = np.sin(t)
-    X = X + 3*np.random.randn(N*NPeriods, 2)
+        X[i*N:(i+1)*N, 0] = np.cos(t) + 2*np.cos(4*t)
+        X[i*N:(i+1)*N, 1] = np.sin(t) + 2*np.sin(4*t)
+    X = X + 1*np.random.randn(N*NPeriods, 2)
     #X = np.random.randn(N*NPeriods, 2)
-    X = np.zeros((N*NPeriods, 20))
-    X[:, 1] = np.arange(X.shape[0])
     r = getCutlerDavisLatticeScore(X)
 
     #Plot results
@@ -277,9 +357,14 @@ if __name__ == '__main__':
     plt.subplot(133)
     checkLattice(r['Q'], r['JJ'], r['II'], r['L'], r['d'], r['offset'], r['CSmooth'], doPlot = True)
     plt.savefig("Lattice.svg", bbox_inches = 'tight')
-    
-    r = getD2ChiSquareScore(X, 20, 20)
+
+    r = getD2ChiSquareScore(X, N, N)
     plt.figure(figsize=(10, 6))
     plt.plot(r['hGT'], 'k')
     plt.plot(r['h'], 'b')
     plt.savefig("D2.svg", bbox_inches = 'tight')
+
+
+    plt.figure(figsize=(16, 5))
+    getDelaunayAreaScore(X, N, N, doPlot = True)
+    plt.savefig("Diffusion.svg", bbox_inches = 'tight')

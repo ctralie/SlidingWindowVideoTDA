@@ -35,13 +35,14 @@ if __name__ == "__main__":
     scores = []
     scoresCD = []
     clarity = []
-    scoresD2 = []
+    scoresDelaunay = []
     BlockLen = 160
     BlockHop = 80
     win = 20
     dim = 20
     foldername = "VideoMix/NumberedVideos"
     NVideos = 20
+    plt.figure(figsize=(15, 5))
     for i in range(NVideos):
         (XOrig, FrameDims) = loadVideo("%s/%i.ogg"%(foldername, i))
         XOrig = XOrig[0:-30, :] #Cut out number at the end
@@ -60,18 +61,16 @@ if __name__ == "__main__":
         checkLattice(r['Q'], r['JJ'], r['II'], r['L'], r['d'], r['offset'], r['CSmooth'], doPlot = True)
         plt.savefig("%s/%i_StatsCD.svg"%(foldername, i), bbox_inches='tight')
         scoresCD.append(s)
-        
-        r = getD2ChiSquareScore(XOrig, 20, 20, derivWin = 10)
+
         plt.clf()
-        plt.plot(r['hGT'], 'k')
-        plt.plot(r['h'], 'b')
-        plt.savefig("%s/%i_D2Hist.svg"%(foldername, i), bbox_inches='tight')
-        scoresD2.append(r['score'])
-        
+        r = getDelaunayAreaScore(XOrig, 20, 20, derivWin = 10, doPlot = True)
+        plt.savefig("%s/%i_DelaunayArea.svg"%(foldername, i), bbox_inches='tight')
+        scoresDelaunay.append(r)
+
     scores = np.array(scores)
     scoresCD = np.array(scoresCD)
     clarity = np.array(clarity)
-    scoresD2 = np.array(scoresD2)
+    scoresDelaunay = np.array(scoresDelaunay)
 
     #Output results in HTML format in descending order of maximum persistence
     fout = open("%s/TDAResults.html"%foldername, "w")
@@ -79,15 +78,15 @@ if __name__ == "__main__":
     idx = np.argsort(-scores)
     idx2 = np.argsort(scoresCD)
     #idx3 = np.argsort(-clarity)
-    idx4 = np.argsort(scoresD2)
+    idx4 = np.argsort(-scoresDelaunay)
     count = 1
     for i in idx:
-        fout.write("<tr><td><h2>%i</h2>%i.ogg<BR><BR>Maximum Persistence = <BR><b>%g</b><BR><BR>Kurtosis = <BR><b>%g</b><BR>D2 Dist = <b>%g</b></td>"%(count, i, scores[i], scoresCD[i], scoresD2[i]))
+        fout.write("<tr><td><h2>%i</h2>%i.ogg<BR><BR>Maximum Persistence = <BR><b>%g</b><BR><BR>Kurtosis = <BR><b>%g</b><BR>D2 Dist = <b>%g</b></td>"%(count, i, scores[i], scoresCD[i], scoresDelaunay[i]))
         fout.write("<td><video controls><source src=\"%i.ogg\" type=\"video/ogg\">Your browser does not support the video tag.</video>"%i)
         fout.write("<td><img src = \"%iResults_Stats.svg\"></td>"%i)
         fout.write("<td><img src = \"%i_StatsCD.svg\"></td>"%i)
         fout.write("<td><img src = \"%i_Clarity.svg\"></td>"%i)
-        fout.write("<td><img src = \"%i_D2Hist.svg\"></td>"%i)
+        fout.write("<td><img src = \"%i_DelaunayArea.svg\"></td>"%i)
         fout.write("</tr>\n")
         count += 1
     fout.write("</table></body></html>")
@@ -98,4 +97,4 @@ if __name__ == "__main__":
     saveRankings(idx, "%s/TDARankings.mat"%foldername)
     saveRankings(idx2, "%s/CutlerDavisRankings.mat"%foldername)
     #saveRankings(idx3, "%s/ClarityRankings.mat"%foldername)
-    saveRankings(idx4, "%s/D2HistRankings.mat"%foldername)
+    saveRankings(idx4, "%s/DelaunayRankings.mat"%foldername)
