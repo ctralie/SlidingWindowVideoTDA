@@ -218,6 +218,14 @@ def getSlidingWindowVideo(I, dim, Tau, dT):
         X[i, :] = f(pix, idxx).flatten()
     return X
 
+def getSlidingWindowVideoInteger(I, dim):
+    N = I.shape[0]
+    M = N-dim+1
+    X = np.zeros((M, I.shape[1]*dim))
+    for i in range(X.shape[0]):
+        X[i, :] = I[i:i+dim, :].flatten()
+    return X
+
 def getTimeDerivative(I, Win):
     dw = np.floor(Win/2)
     t = np.arange(-dw, dw+1)
