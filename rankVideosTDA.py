@@ -7,6 +7,7 @@ from SpectralMethods import *
 from CSMSSMTools import *
 from FundamentalFreq import *
 import scipy.io as sio
+import time
 
 def getClarity(X):
     #Do Diffusion Maps
@@ -43,14 +44,24 @@ if __name__ == "__main__":
     foldername = "VideoMix/NumberedVideos"
     NVideos = 20
     plt.figure(figsize=(15, 5))
+    timesFreq = []
+    timesLattice = []
+    timesClarity = []
+    timesTDA = []
     for i in range(NVideos):
         (XOrig, FrameDims) = loadVideo("%s/%i.ogg"%(foldername, i))
         XOrig = XOrig[0:-30, :] #Cut out number at the end
+        tic = time.time()
         (PScores, MPScores, QPScores, LScores) = processVideo(XOrig, FrameDims, -1, BlockHop, win, dim, "%s/%iResults"%(foldername, i))
+        timesTDA.append(time.time() - tic)
         scores.append(PScores[0])
+        tic = time.time()
         r = getCutlerDavisLatticeScore(XOrig)
+        timesLattice.append(time.time() - tic)
         plt.clf()
+        tic = time.time()
         clarity.append(getClarity(XOrig))
+        timesClarity.append(time.time() - tic)
         plt.savefig("%s/%i_Clarity.svg"%(foldername, i), bbox_inches='tight')
         s = r['score']
         plt.clf()
@@ -62,10 +73,19 @@ if __name__ == "__main__":
         plt.savefig("%s/%i_StatsCD.svg"%(foldername, i), bbox_inches='tight')
         scoresCD.append(s)
 
+        tic = time.time()
+        getCutlerDavisFrequencyScore(XOrig)
+        timesFreq.append(time.time() - tic)
+
         plt.clf()
         r = getDelaunayAreaScore(XOrig, 20, 20, derivWin = 10, doPlot = True)
         plt.savefig("%s/%i_DelaunayArea.svg"%(foldername, i), bbox_inches='tight')
         scoresDelaunay.append(r)
+
+    print("Mean TDA Time: ", np.mean(np.array(timesTDA)))
+    print("Mean Freq Time: ", np.mean(np.array(timesFreq)))
+    print("Mean Clarity Time: ", np.mean(np.array(timesClarity)))
+    print("Mean Lattice Time: ", np.mean(np.array(timesLattice)))
 
     scores = np.array(scores)
     scoresCD = np.array(scoresCD)
