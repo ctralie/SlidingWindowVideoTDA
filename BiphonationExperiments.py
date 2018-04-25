@@ -122,7 +122,7 @@ def doSlidingWindowVideo(XOrig, dim, desiredSamples, name, diffusionParams = Non
     plt.title("First Diffusion Map Coordinates")
     plt.xlabel("Frame Number")
     plt.subplot(212)
-    plt.title("Normalized Squared Difference Autcorrelation (T = %i, Clarity = %.3g)"%(maxT, corr[maxT]))
+    plt.title("Normalized Squared Difference Autocorrelation (T = %i, Clarity = %.3g)"%(maxT, corr[maxT]))
     plt.plot(corr)
     plt.xlabel("Lag")
     plt.ylabel("Correlation")
